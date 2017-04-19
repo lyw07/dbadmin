@@ -32,6 +32,12 @@
     - name: Install zlib1g-dev
       command: aptitude install zlib1g-dev
 
+    - name: Copy script to install PostgreSQL 9.6.2
+      copy: 
+        src: build_postpresql.sh
+        dest: /
+        mode: 0700
+
     - name: Run the script to install PostgreSQL 9.6.2
       command: bash /build_postpresql.sh
 

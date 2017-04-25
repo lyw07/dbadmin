@@ -9,7 +9,7 @@ CONFIG = File.join(File.dirname(__FILE__), "vagrant/config.rb")
 $local_release_dir = "/vagrant/temp"
 $forwarded_ports = {}
 host_vars = {}
-$num_instances = 3
+$num_instances = 2
 
 if File.exist?(CONFIG)
   require CONFIG
@@ -51,9 +51,9 @@ Vagrant.configure("2") do |config|
       if machine_id == 2
         ip = "192.168.33.10"
       end
-      if machine_id == 3
-        ip = "192.168.33.11"
-      end
+      # if machine_id == 3
+      #   ip = "192.168.33.11"
+      # end
 
       $forwarded_ports.each do |guest, host|
         config.vm.network "forwarded_port", guest: guest, host: host, auto_correct: true
@@ -82,14 +82,16 @@ Vagrant.configure("2") do |config|
         end
         ansible.sudo = true
         ansible.limit = "all"
-        ansible.verbose = "-vvv"
+        # ansible.verbose = "-vvv"
         ansible.host_key_checking = false
         ansible.raw_arguments = ["--forks=#{$num_instances}"]
         ansible.host_vars = host_vars
         ansible.groups = {
           "barman" => ["machine1"],
+          "postgresql" => ["machine1", "machine2"],
           "db" => ["machine2"],
-          "backup" => ["machine3"],
+          "barman(after)" => ["machine1"],
+          # "backup" => ["machine3"],
         }
       end
     end

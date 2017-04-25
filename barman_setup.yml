@@ -1,0 +1,28 @@
+---
+- hosts: barman
+  tasks:
+    - name: Copy script to set up PostgreSQL Community APT repository
+      copy: 
+        src: apt.postgresql.org.sh
+        dest: /
+        mode: 0700
+
+    - name: Run the script
+      command: bash /apt.postgresql.org.sh
+
+    - name: Install Barman
+      apt:
+        name: barman
+
+    - name: Copy main server configuration into /etc/barman.d
+      copy: 
+        src: barman.conf
+        dest: /etc/
+
+    - name: Copy main server configuration into /etc/barman.d
+      copy: 
+        src: pg.conf
+        dest: /etc/barman.d/
+
+    - name: add server pg's ip address into hosts file
+      shell: echo "192.168.33.10  pg\n" >> /etc/hosts

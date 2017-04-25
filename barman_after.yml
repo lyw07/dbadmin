@@ -1,0 +1,11 @@
+---
+- hosts: barman(after)
+  tasks: 
+    - name: create replication slot
+      command: barman receive-wal --create-slot pg
+
+    - name: cron
+      command: barman cron
+
+    - name: switch-xlog
+      command: barman switch-xlog --force --archive pg

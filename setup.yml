@@ -1,43 +1,7 @@
 ---
-- hosts: barman
-  tasks:
-    - name: Copy script to set up PostgreSQL Community APT repository
-      copy: 
-        src: apt.postgresql.org.sh
-        dest: /
-        mode: 0700
-    
-    - name: Run the script
-      command: bash /apt.postgresql.org.sh
+- include: barman_setup.yml
+- include: postgresql_install.yml
+- include: db_setup.yml
+- include: barman_after.yml
 
-    - name: Install Barman
-      apt:
-        name: barman
-
-- hosts: db
-  tasks:
-    - name: Update and upgrade apt-get
-      apt: 
-        update_cache: yes
-        upgrade: yes
-
-    - name: Install build-essential for make and gcc
-      apt: 
-        name: build-essential
-        force: yes
-
-    - name: Install libreadline6-dev
-      command: aptitude -y install libreadline6-dev
-
-    - name: Install zlib1g-dev
-      command: aptitude install zlib1g-dev
-
-    - name: Copy script to install PostgreSQL 9.6.2
-      copy: 
-        src: build_postpresql.sh
-        dest: /
-        mode: 0700
-
-    - name: Run the script to install PostgreSQL 9.6.2
-      command: bash /build_postpresql.sh
 

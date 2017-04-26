@@ -20,28 +20,28 @@
       shell: . /etc/profile
 
 
-    - block: 
-      - name: initialize db
-        command: bash -lc "pg_ctl initdb -D /usr/local/pgsql/data"
+- hosts: original-db
+  become: true
+  become_method: sudo
+  become_user: postgres
+  tasks:
+    - name: initialize db
+      command: bash -lc "pg_ctl initdb -D /usr/local/pgsql/data"
 
-      - name: move the new configuration file into the data folder
-        copy: 
-          src: postgresql.conf
-          dest: /usr/local/pgsql/data
-          mode: 0600
+    - name: move the new configuration file into the data folder
+      copy: 
+        src: postgresql.conf
+        dest: /usr/local/pgsql/data
+        mode: 0600
 
-      - name: add client authentication
-        shell: echo "host replication barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
+    - name: add client authentication
+      shell: echo "host replication barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
 
-      - name: add client authentication (second)
-        shell: echo "host postgres barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
-      
-      - name: start server
-        command: bash -lc "pg_ctl start -D /usr/local/pgsql/data initdb -l logfile"
+    - name: add client authentication (second)
+      shell: echo "host postgres barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
 
-      - name: createuser for barman
-        command: bash -lc "createuser -s -w barman"
+    - name: start server
+      command: bash -lc "pg_ctl start -D /usr/local/pgsql/data"
 
-      become: true
-      become_method: sudo
-      become_user: postgres
+    - name: createuser for barman
+      command: bash -lc "createuser -s -w barman"

@@ -1,7 +1,15 @@
 ---
-- include: barman_setup.yml
-- include: postgresql_install.yml
-- include: db_setup.yml
-- include: barman_after.yml
+# - include: barman_setup.yml
+# - include: postgresql_install.yml
+# - include: db_setup.yml
+# # - include: barman_after.yml
+- hosts: barman
+  tasks:
+    - name: hre
+      shell: echo "hello"
+- hosts: db
+  tasks:
+    - name: hi
+      shell: echo "hi"
 
 

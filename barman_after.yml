@@ -1,5 +1,5 @@
 ---
-- hosts: barman(after)
+- hosts: barman
   tasks: 
     - name: create replication slot
       command: barman receive-wal --create-slot pg

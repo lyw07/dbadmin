@@ -26,13 +26,29 @@
     - name: install python-pexpect
       command: pip install pexpect
 
-    - name: generate ssh keys
-      expect: 
-        command: ssh-keygen -t rsa
-        responses:
-          'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
-          'Enter passphrase \(empty for no passphrase\):': "\n"
-          'Enter same passphrase again:': "\n"
+    - block: 
+      - name: generate ssh keys
+        expect: 
+          command: ssh-keygen -t rsa
+          responses:
+            'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
+            'Enter passphrase \(empty for no passphrase\):': "\n"
+            'Enter same passphrase again:': "\n"
+            
+      - name: config ssh
+        file: 
+          path: /var/lib/postgresql/.ssh/config
+          state: touch
+
+      - name: add to config
+        lineinfile:
+          path: /var/lib/postgresql/.ssh/config
+          line: 'Host 192.168.33.9'
+
+      - name: add another line
+        lineinfile:
+          path: /var/lib/postgresql/.ssh/config
+          line: 'StrictHostKeyChecking no'
       become: true
       become_method: sudo
       become_user: postgres

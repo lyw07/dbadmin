@@ -7,13 +7,11 @@ machine3 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201 ansible_ssh_user='vagr
 [barman]
 machine1
 
-[postgresql]
-machine1
+[db]
 machine2
 machine3
 
-[db]
-machine2
+[standby]
 machine3
 
 [original-db]

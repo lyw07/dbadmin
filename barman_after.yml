@@ -1,6 +1,15 @@
 ---
 - hosts: barman
+  become: true
+  become_method: sudo
+  become_user: barman
   tasks: 
+    - name: copy postgresql public key into authorized_keys
+      copy:
+        src: tmp/machine2/var/lib/postgresql/.ssh/id_rsa.pub
+        dest: /var/lib/barman/.ssh/authorized_keys
+        mode: 0600
+
     - name: create replication slot
       command: barman receive-wal --create-slot pg
 

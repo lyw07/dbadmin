@@ -1,28 +1,73 @@
 ---
 - hosts: barman
   tasks:
-    - name: Copy script to set up PostgreSQL Community APT repository
-      copy: 
-        src: apt.postgresql.org.sh
-        dest: /
-        mode: 0700
+    - name: add source repository into source list
+      apt_repository:
+        repo: deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main
+        state: present
+        filename: '/etc/apt/sources.list.d/pgdg.list'
 
-    - name: Run the script
-      command: bash /apt.postgresql.org.sh
+    - name: import the repository signing key
+      apt_key:
+        url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        state: present
+
+    - name: update the package lists
+      apt: 
+        update_cache: yes
 
     - name: Install Barman
       apt:
         name: barman
+
+    - name: Install postgresql
+      apt:
+        name: postgresql-9.6
 
     - name: Copy main server configuration into /etc/barman.d
       copy: 
         src: barman.conf
         dest: /etc/
 
-    - name: Copy main server configuration into /etc/barman.d
+    - name: Copy database server configuration into /etc/barman.d
       copy: 
         src: pg.conf
         dest: /etc/barman.d/
 
     - name: add server pg's ip address into hosts file
-      shell: echo "192.168.33.10  pg\n" >> /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: '192.168.33.10  pg'
+
+    - name: change the hostname
+      command: hostname backup
+
+    - name: install pip
+      command: aptitude install -y python-pip
+
+    - name: install python-pexpect
+      command: pip install pexpect
+    
+    - name: generate ssh keys
+      expect: 
+        command: ssh-keygen -t rsa
+        responses:
+          'Enter file in which to save the key \(/var/lib/barman/.ssh/id_rsa\):': "\n"
+          'Enter passphrase \(empty for no passphrase\):': "\n"
+          'Enter same passphrase again:': "\n"
+      become: true
+      become_method: sudo
+      become_user: barman
+
+    - name: fetch the public key to store in the local box
+      fetch:
+        src: /var/lib/barman/.ssh/id_rsa.pub
+        dest: tmp
+
+    - name: create incoming wal directory
+      file:
+        path: /var/lib/barman/pg/incoming
+        state: directory
+        owner: barman
+        group: barman
+        mode: 0755

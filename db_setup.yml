@@ -1,47 +1,80 @@
 ---
-- hosts: db
-  tasks:
-    - name: add user postgres
-      command: adduser --disabled-password postgres
-
-    - name: create directory for postgresql's data
-      file:
-        path: /usr/local/pgsql/data
-        state: directory
-        mode: 0777
-
-    - name: change the owner of the folder
-      command: chown postgres /usr/local/pgsql/data
-
-    - name: add /usr/local/pgsql/bin into PATH
-      shell: echo "PATH=/usr/local/pgsql/bin:$PATH" >> /etc/profile
-
-    - name: source profile
-      shell: . /etc/profile
-
-
 - hosts: original-db
-  become: true
-  become_method: sudo
-  become_user: postgres
   tasks:
-    - name: initialize db
-      command: bash -lc "pg_ctl initdb -D /usr/local/pgsql/data"
-
     - name: move the new configuration file into the data folder
       copy: 
         src: postgresql.conf
-        dest: /usr/local/pgsql/data
+        dest: /etc/postgresql/9.6/main/
         mode: 0600
 
     - name: add client authentication
-      shell: echo "host replication barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/9.6/main/pg_hba.conf
+        line: 'host replication postgres    192.168.33.9/32   trust'
 
     - name: add client authentication (second)
-      shell: echo "host postgres barman    192.168.33.9/32   trust\n" >> /usr/local/pgsql/data/pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/9.6/main/pg_hba.conf
+        line: 'host all postgres    192.168.33.9/32   trust'
+ 
+    - name: change the hostname
+      command: hostname pg
 
-    - name: start server
-      command: bash -lc "pg_ctl start -D /usr/local/pgsql/data"
+    - name: install pip
+      command: aptitude install -y python-pip
 
-    - name: createuser for barman
-      command: bash -lc "createuser -s -w barman"
+    - name: install python-pexpect
+      command: pip install pexpect
+
+    - name: generate ssh keys
+      expect: 
+        command: ssh-keygen -t rsa
+        responses:
+          'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
+          'Enter passphrase \(empty for no passphrase\):': "\n"
+          'Enter same passphrase again:': "\n"
+      become: true
+      become_method: sudo
+      become_user: postgres
+
+    - name: fetch the public key to store in the local box
+      fetch:
+        src: /var/lib/postgresql/.ssh/id_rsa.pub
+        dest: tmp
+
+    - name: restart server
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: reload configuration files
+      service:
+        name: postgresql
+        state: reloaded
+
+- hosts: standby
+  tasks: 
+    - name: change host name
+      command: hostname standby
+    
+    - name: create .ssh folder
+      file:
+        path: /var/lib/postgresql/.ssh
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+    - name: copy barman public key into authorized_keys
+      copy:
+        src: tmp/machine1/var/lib/barman/.ssh/id_rsa.pub
+        dest: /var/lib/postgresql/.ssh/authorized_keys
+        mode: 0600
+      become: true
+      become_method: sudo
+      become_user: postgres 
+
+    - name: stop service
+      service:
+        name: postgresql
+        state: stopped

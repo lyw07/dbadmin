@@ -36,7 +36,7 @@
 
     - name: add server pg's ip address into hosts file
       lineinfile:
-        path: /etc/hosts
+        dest: /etc/hosts
         line: '192.168.33.10  pg'
 
     - name: change the hostname

@@ -9,12 +9,12 @@
 
     - name: add client authentication
       lineinfile:
-        path: /etc/postgresql/9.6/main/pg_hba.conf
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
         line: 'host replication postgres    192.168.33.9/32   trust'
 
     - name: add client authentication (second)
       lineinfile:
-        path: /etc/postgresql/9.6/main/pg_hba.conf
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
         line: 'host all postgres    192.168.33.9/32   trust'
  
     - name: change the hostname
@@ -42,12 +42,12 @@
 
       - name: add to config
         lineinfile:
-          path: /var/lib/postgresql/.ssh/config
+          dest: /var/lib/postgresql/.ssh/config
           line: 'Host 192.168.33.9'
 
       - name: add another line
         lineinfile:
-          path: /var/lib/postgresql/.ssh/config
+          dest: /var/lib/postgresql/.ssh/config
           line: 'StrictHostKeyChecking no'
       become: true
       become_method: sudo

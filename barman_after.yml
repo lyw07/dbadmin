@@ -17,12 +17,12 @@
 
     - name: add to config
       lineinfile:
-        path: /var/lib/barman/.ssh/config
+        dest: /var/lib/barman/.ssh/config
         line: 'Host 192.168.33.11'
 
     - name: add another line
       lineinfile:
-        path: /var/lib/barman/.ssh/config
+        dest: /var/lib/barman/.ssh/config
         line: 'StrictHostKeyChecking no'
 
     - name: create replication slot

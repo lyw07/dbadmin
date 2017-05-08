@@ -66,14 +66,14 @@ Vagrant.configure("2") do |config|
         vb.cpus = 1
       end
 
-      host_vars["machine#{machine_id}"] = {
-        "ip": ip,
-        "flannel_interface": ip,
-        "flannel_backend_type": "host-gw",
-        "local_release_dir" => $local_release_dir,
-        "download_run_once": "False",
-        "kube_network_plugin": "flannel",
-      }
+      # host_vars["machine#{machine_id}"] = {
+      #   "ip": ip,
+      #   "flannel_interface": ip,
+      #   "flannel_backend_type": "host-gw",
+      #   "local_release_dir" => $local_release_dir,
+      #   "download_run_once": "False",
+      #   "kube_network_plugin": "flannel",
+      # }
       config.vm.network "private_network", ip: ip
 
       # config.vm.provision "ansible" do |ansible|

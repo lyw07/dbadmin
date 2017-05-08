@@ -33,12 +33,12 @@
       apt: 
         name: barman-cli
 
-    - name: Copy main server configuration into /etc/barman.d
+    - name: Copy barman server configuration into /etc/barman.d
       copy: 
         src: config/barman.conf
         dest: /etc/
 
-    - name: Copy database server configuration into /etc/barman.d
+    - name: Copy database server pg 's configuration into /etc/barman.d
       copy: 
         src: config/pg.conf
         dest: /etc/barman.d/
@@ -68,7 +68,7 @@
       become_method: sudo
       become_user: barman
 
-    - name: fetch the public key to store in the local box
+    - name: fetch the public key of barman to store in the local box
       fetch:
         src: /var/lib/barman/.ssh/id_rsa.pub
         dest: tmp

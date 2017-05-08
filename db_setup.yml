@@ -1,13 +1,13 @@
 ---
 - hosts: original-db
   tasks:
-    - name: move the new configuration file into the data folder
+    - name: copy postgresql configuration file into the data folder
       copy: 
         src: config/postgresql.conf
         dest: /etc/postgresql/9.6/main/
         mode: 0600
 
-    - name: move the new pg_hba file into the data folder
+    - name: copy pg_hba file into the data folder
       copy: 
         src: config/pg/pg_hba.conf
         dest: /etc/postgresql/9.6/main/
@@ -17,16 +17,6 @@
       copy:
         src: config/pg/repmgr.conf
         dest: /etc/
-
-    - name: add client authentication
-      lineinfile:
-        dest: /etc/postgresql/9.6/main/pg_hba.conf
-        line: 'host replication postgres    192.168.33.9/32   trust'
-
-    - name: add client authentication (second)
-      lineinfile:
-        dest: /etc/postgresql/9.6/main/pg_hba.conf
-        line: 'host all postgres    192.168.33.9/32   trust'
  
     - name: change the hostname
       command: hostname pg
@@ -40,25 +30,25 @@
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
             
-      - name: config ssh
+      - name: create config for ssh
         file: 
           path: /var/lib/postgresql/.ssh/config
           state: touch
 
-      - name: add to config
+      - name: add barman server's ip address to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'Host 192.168.33.9'
 
-      - name: add another line
+      - name: ignore ssh host key checking
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'StrictHostKeyChecking no'
 
-      - name: create user
+      - name: create user repmgr
         command: createuser -s repmgr
 
-      - name: create databse
+      - name: create databse repmgr
         command: createdb repmgr -O repmgr
       become: true
       become_method: sudo
@@ -94,13 +84,13 @@
       apt: 
         name: barman-cli
 
-    - name: move the new configuration file into the data folder
+    - name: copy postgresql configuration file into the data folder
       copy: 
         src: config/postgresql.conf
         dest: /etc/postgresql/9.6/main/
         mode: 0600
     
-    - name: move the new pg_hba file into the data folder
+    - name: copy pg_hba file into the data folder
       copy: 
         src: config/standby/pg_hba.conf
         dest: /etc/postgresql/9.6/main/
@@ -120,7 +110,7 @@
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
             
-      - name: config ssh
+      - name: create config for ssh
         file: 
           path: /var/lib/postgresql/.ssh/config
           state: touch
@@ -159,29 +149,9 @@
         name: postgresql
         state: stopped
 
-    - name: remove postgresql folder
+    - name: remove postgresql data folder to prepare for standby clone
       file:
         path: /var/lib/postgresql/9.6/main/
         state: absent
 
-    - name: clone standby
-      command: repmgr -h 192.168.33.10 -d repmgr -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
-      become: true
-      become_user: postgres
-      become_method: sudo
 
-    - name: start server
-      service:
-        name: postgresql
-        state: started
-
-    - name: reload configuration files
-      service:
-        name: postgresql
-        state: reloaded
-
-    - name: register as standby
-      command: repmgr -f /etc/repmgr.conf standby register
-      become: true
-      become_user: postgres
-      become_method: sudo

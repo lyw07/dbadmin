@@ -1,0 +1,24 @@
+---
+- hosts: standby
+  tasks:   
+    - name: clone standby
+      command: repmgr -h 192.168.33.10 -d repmgr -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
+      become: true
+      become_user: postgres
+      become_method: sudo
+
+    - name: start server
+      service:
+        name: postgresql
+        state: started
+
+    - name: reload configuration files
+      service:
+        name: postgresql
+        state: reloaded
+
+    - name: register as standby
+      command: repmgr -f /etc/repmgr.conf standby register
+      become: true
+      become_user: postgres
+      become_method: sudo

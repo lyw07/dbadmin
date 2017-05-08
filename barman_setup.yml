@@ -24,14 +24,23 @@
       apt:
         name: postgresql-9.6
 
+    - name: install repmgr
+      apt:
+        name: repmgr
+        force: yes
+
+    - name: install barman-cli
+      apt: 
+        name: barman-cli
+
     - name: Copy main server configuration into /etc/barman.d
       copy: 
-        src: barman.conf
+        src: config/barman.conf
         dest: /etc/
 
     - name: Copy database server configuration into /etc/barman.d
       copy: 
-        src: pg.conf
+        src: config/pg.conf
         dest: /etc/barman.d/
 
     - name: add server pg's ip address into hosts file

@@ -1,2 +1,2 @@
 # backupdb
-backup database using barman
+backup database using barman and repmgr

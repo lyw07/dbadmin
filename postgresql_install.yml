@@ -19,3 +19,14 @@
     - name: install postgresql-9.6
       apt:
         name: postgresql-9.6
+
+    - name: install repmgr
+      apt:
+        name: repmgr
+        force: yes
+
+    - name: install pip
+      command: aptitude install -y python-pip
+
+    - name: install python-pexpect
+      command: pip install pexpect

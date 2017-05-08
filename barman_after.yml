@@ -10,6 +10,11 @@
         dest: /var/lib/barman/.ssh/authorized_keys
         mode: 0600
 
+    - name: append authorized_keys
+      lineinfile:
+        dest: /var/lib/barman/.ssh/authorized_keys
+        line: "{{ lookup('file', 'tmp/machine3/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+
     - name: config ssh
       file: 
         path: /var/lib/barman/.ssh/config
@@ -33,3 +38,6 @@
 
     - name: switch-xlog
       command: barman switch-xlog --force --archive pg
+
+    - name: backup
+      command: barman backup pg

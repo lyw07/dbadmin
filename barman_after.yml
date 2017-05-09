@@ -36,6 +36,16 @@
     - name: cron
       command: barman cron
 
+    - name: create a crontab to run barman cron every minute
+      cron:
+        name: "barman cron in every minute"
+        minute: "*"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "/usr/bin/barman cron"
+
     - name: switch-xlog
       command: barman switch-xlog --force --archive pg
 

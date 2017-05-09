@@ -125,7 +125,7 @@
           dest: /var/lib/postgresql/.ssh/config
           line: 'User barman'
 
-      - name: add another line
+      - name: ignore ssh host key checking
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'StrictHostKeyChecking no'

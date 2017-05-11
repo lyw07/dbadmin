@@ -8,7 +8,7 @@ Requirements
 * VirtualBox v5.1.22
 * Your ssh key must be copied to all the servers part of your inventory. To do so, change the variable value `ansible_ssh_private_key_file` in file `hosts`.
 
-> *Note*: The oldest versions of the tools that support running the project has not been tested, but it is recommended to      > update to the versions listed here.
+> *Note*: The oldest versions of the tools that support running the project has not been tested, but it is recommended to  update to the versions listed here.
 
 
 Details of the Project

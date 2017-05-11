@@ -1,19 +1,19 @@
-## Backup database using Barman and Repmgr
+## Back up database using Barman and Repmgr
 
 
 Requirements
 ----------------------
-Ansible v2.3
-Vagrant v1.9.3
-VirtualBox v5.1.22
-Your ssh key must be copied to all the servers part of your inventory. To do so, change the variable value `ansible_ssh_private_key_file` in file `hosts`.
+* Ansible v2.3
+* Vagrant v1.9.3
+* VirtualBox v5.1.22
+* Your ssh key must be copied to all the servers part of your inventory. To do so, change the variable value `ansible_ssh_private_key_file` in file `hosts`.
 
-Note: The oldest versions of the tools that support running the project has not been tested, but it is recommended to update to the versions listed here.
+> *Note*: The oldest versions of the tools that support running the project has not been tested, but it is recommended to      > update to the versions listed here.
 
 
 Details of the Project
 ----------------------
-This project uses **Vagrant** to set up four virtual machines with debian jessie. To know more about the settings of these four virtual machines, please take a look at the `Vagrantfile`. 
+This project uses **Vagrant** to set up four virtual machines with **debian jessie**. To know more about the settings of these four virtual machines, please take a look at the `Vagrantfile`. 
 
 It also uses **ansible** to configure these four machines. The file `hosts` shows that machine1 is the barman server, machine2 is the master server, and machine3 and machine4 are the standby servers. 
 

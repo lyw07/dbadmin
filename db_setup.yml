@@ -1,25 +1,30 @@
 ---
-- hosts: original-db
+- hosts: master
   tasks:
     - name: copy postgresql configuration file into the data folder
       copy: 
-        src: config/postgresql.conf
+        src: config/master/postgresql.conf
         dest: /etc/postgresql/9.6/main/
         mode: 0600
 
     - name: copy pg_hba file into the data folder
       copy: 
-        src: config/pg/pg_hba.conf
+        src: config/master/pg_hba.conf
         dest: /etc/postgresql/9.6/main/
         mode: 0600
 
     - name: create repmgr.conf
       copy:
-        src: config/pg/repmgr.conf
+        src: config/master/repmgr.conf
         dest: /etc/
  
     - name: change the hostname
       command: hostname pg
+
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.1.1 pg' 
 
     - block: 
       - name: generate ssh keys
@@ -75,10 +80,63 @@
       become_user: postgres
       become_method: sudo
 
+- hosts: standby1
+  tasks:
+    - name: change host name
+      command: hostname standby1
+  
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.1.1 standby1'
+
+    - name: copy pg_hba file into the data folder
+      copy: 
+        src: config/standby/standby_one/pg_hba.conf
+        dest: /etc/postgresql/9.6/main/
+        mode: 0600
+
+    - name: create repmgr.conf
+      copy:
+        src: config/standby/standby_one/repmgr.conf
+        dest: /etc/
+
+- hosts: standby2
+  tasks:
+    - name: change host name
+      command: hostname standby2
+  
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.1.1 standby2'
+
+    - name: copy pg_hba file into the data folder
+      copy: 
+        src: config/standby/standby_two/pg_hba.conf
+        dest: /etc/postgresql/9.6/main/
+        mode: 0600
+
+    - name: create repmgr.conf
+      copy:
+        src: config/standby/standby_two/repmgr.conf
+        dest: /etc/
+
+
 - hosts: standby
   tasks: 
-    - name: change host name
-      command: hostname standby
+    - name: add postgres as a sudoer
+      lineinfile:
+        dest: /etc/sudoers.d/postgres
+        line: >
+          postgres ALL=(root) NOPASSWD:/usr/bin/systemctl start postgresql, 
+          /usr/bin/systemctl stop postgresql, 
+          /usr/bin/systemctl restart postgresql, 
+          /usr/bin/systemctl reload postgresql, 
+          /usr/bin/pg_ctlcluster 9.6 main promote
+        create: yes
+        state: present
+        mode: 0600
 
     - name: install barman-cli
       apt: 
@@ -86,20 +144,9 @@
 
     - name: copy postgresql configuration file into the data folder
       copy: 
-        src: config/postgresql.conf
+        src: config/standby/postgresql.conf
         dest: /etc/postgresql/9.6/main/
         mode: 0600
-    
-    - name: copy pg_hba file into the data folder
-      copy: 
-        src: config/standby/pg_hba.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
-
-    - name: create repmgr.conf
-      copy:
-        src: config/standby/repmgr.conf
-        dest: /etc/
 
     - block: 
       - name: generate ssh keys

@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 $forwarded_ports = {}
-$num_instances = 3
+$num_instances = 4
 
 
 Vagrant.configure("2") do |config|
@@ -20,6 +20,9 @@ Vagrant.configure("2") do |config|
       end
       if machine_id == 3
         ip = "192.168.33.11"
+      end
+      if machine_id == 4
+        ip = "192.168.33.12"
       end
 
       $forwarded_ports.each do |guest, host|

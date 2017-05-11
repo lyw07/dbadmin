@@ -35,12 +35,12 @@
 
     - name: Copy barman server configuration into /etc/barman.d
       copy: 
-        src: config/barman.conf
+        src: config/barman/barman.conf
         dest: /etc/
 
     - name: Copy database server pg 's configuration into /etc/barman.d
       copy: 
-        src: config/pg.conf
+        src: config/barman/pg.conf
         dest: /etc/barman.d/
 
     - name: add server pg's ip address into hosts file
@@ -50,6 +50,11 @@
 
     - name: change the hostname
       command: hostname backup
+
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.1.1 backup' 
 
     - name: install pip
       command: aptitude install -y python-pip

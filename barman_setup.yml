@@ -43,10 +43,20 @@
         src: config/barman/pg.conf
         dest: /etc/barman.d/
 
+    - name: Copy database server standby 's configuration into /etc/barman.d
+      copy: 
+        src: config/barman/standby1.conf
+        dest: /etc/barman.d/
+
     - name: add server pg's ip address into hosts file
       lineinfile:
         dest: /etc/hosts
         line: '192.168.33.10  pg'
+
+    - name: add server pg's ip address into hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: '192.168.33.11  standby1'
 
     - name: change the hostname
       command: hostname backup
@@ -78,9 +88,17 @@
         src: /var/lib/barman/.ssh/id_rsa.pub
         dest: tmp
 
-    - name: create incoming wal directory
+    - name: create incoming wal directory for master server
       file:
         path: /var/lib/barman/pg/incoming
+        state: directory
+        owner: barman
+        group: barman
+        mode: 0755
+
+    - name: create incoming wal directory for standby server
+      file:
+        path: /var/lib/barman/standby1/incoming
         state: directory
         owner: barman
         group: barman

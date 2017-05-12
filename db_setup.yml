@@ -129,10 +129,10 @@
       lineinfile:
         dest: /etc/sudoers.d/postgres
         line: >
-          postgres ALL=(root) NOPASSWD:/usr/bin/systemctl start postgresql, 
-          /usr/bin/systemctl stop postgresql, 
-          /usr/bin/systemctl restart postgresql, 
-          /usr/bin/systemctl reload postgresql, 
+          postgres ALL=(root) NOPASSWD: /bin/systemctl start postgresql, 
+          /bin/systemctl stop postgresql, 
+          /bin/systemctl restart postgresql, 
+          /bin/systemctl reload postgresql, 
           /usr/bin/pg_ctlcluster 9.6 main promote
         create: yes
         state: present
@@ -190,15 +190,5 @@
       fetch:
         src: /var/lib/postgresql/.ssh/id_rsa.pub
         dest: tmp
-
-    - name: stop server
-      service:
-        name: postgresql
-        state: stopped
-
-    - name: remove postgresql data folder to prepare for standby clone
-      file:
-        path: /var/lib/postgresql/9.6/main/
-        state: absent
 
 

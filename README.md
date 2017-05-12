@@ -19,7 +19,7 @@ It also uses **ansible** to configure these four machines. The file `hosts` show
 
 The bash script `config-server.sh` will be run so that the machines will be configured in the order that we desire. 
 
-The five ansible-playbooks are `barman-setup.yml` which configures barman server, `postgresql.yml` which mainly installs postgresql on the master server (machine2) and two standby servers (machine3 and machine4), `db_setup.yml` which configures the master server and two standby servers, `barman_after.yml` which start data backup of the master server in barman, `standby_after.yml` which clone the data of master server to the standby servers and start repmgrd in the standby servers.
+The six ansible-playbooks are `barman-setup.yml` which configures barman server, `postgresql.yml` which mainly installs postgresql on the master server (machine2) and two standby servers (machine3 and machine4), `db_setup.yml` which configures the master server and two standby servers, `barman_after.yml` which start data backup of the master server in barman, `standby_after.yml` which clone the data of master server to the standby servers and start repmgrd in the standby servers, and `barman_standby.yml` which creates a replication slot named barman in standby server such that once the standby server gets promoted to be master, barman will receive WAL files of the standby.
 
 The configuration files of the four machines are stored in the folder `config` accordingly. 
 
@@ -41,7 +41,17 @@ To run the project,
 
 * To check if the master server and the standby servers are running correctly, check the logfile in the folder `/var/log/postgresql/` to see whether standby servers get data from the master server and have **repmgrd** running.
 
-* **[not working perfectly right now]** To test an automatic **failover**, turn down the master server by using `service postgresql stop` as a **root** user so that repmgrd in the standby servers will detect it and perform a automatic failover after 60 seconds.
+* To test an automatic **failover**, turn down the master server by using `service postgresql stop` as a **root** user so that repmgrd in the standby servers will detect it and perform a automatic failover after 15 seconds. Repmgrd will promote `standby1` to become a new master and let `standby2` follow `standby1`.
+	* To check if automatic failover works correctly, 
+		* log into standby server as user *postgres*
+		* run `psql`
+		* connect to database `repmgr` as user `repmgr` by typing `\c repmgr repmgr`
+		* do `SELECT * FROM repmgr_pg.repl_nodes ORDER BY id;` to see if standby2's *upstream_node_id* is now 2 instead of 1
+		* or do `SELECT * FROM repmgr_pg.repl_events;` to see if *promote* and *follow* have been done.
+	* In order to let barman connect to the cluster again, 
+		* do `barman backup standby1` in the barman server
+		* change the names of the cluster in `repmgr.conf` to be standby1 to match with the database host name in barman
+		* In `repmgr.conf`, change `restore_command` to be `/usr/bin/barman-wal-restore -U barman <barman_hostname> standby1 %f %p`.
 
 
 

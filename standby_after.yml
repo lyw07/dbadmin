@@ -1,6 +1,16 @@
 ---
 - hosts: standby
   tasks:   
+    - name: stop server
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: remove postgresql data folder to prepare for standby clone
+      file:
+        path: /var/lib/postgresql/9.6/main/
+        state: absent
+
     - name: clone standby
       command: repmgr -h 192.168.33.10 -d repmgr -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
       become: true

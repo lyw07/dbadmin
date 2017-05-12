@@ -1,0 +1,8 @@
+---
+- hosts: barman
+  tasks:
+    - name: create replication slot
+      command: barman receive-wal --create-slot standby1
+      become: true
+      become_method: sudo
+      become_user: barman

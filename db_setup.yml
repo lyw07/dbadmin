@@ -1,6 +1,15 @@
 ---
 - hosts: master
   tasks:
+    - name: change the hostname
+      hostname:
+        name: "{{hostname}}"
+
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.0.1 {{hostname}} {{hostname}}' 
+
     - name: copy postgresql configuration file into the data folder
       copy: 
         src: config/master/postgresql.conf
@@ -18,14 +27,6 @@
         src: config/master/repmgr.conf
         dest: /etc/
  
-    - name: change the hostname
-      command: hostname pg
-
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.1.1 pg' 
-
     - block: 
       - name: generate ssh keys
         expect: 
@@ -43,7 +44,7 @@
       - name: add barman server's ip address to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
-          line: 'Host 192.168.33.9'
+          line: 'Host backup'
 
       - name: ignore ssh host key checking
         lineinfile:
@@ -83,12 +84,13 @@
 - hosts: standby1
   tasks:
     - name: change host name
-      command: hostname standby1
+      hostname:
+        name: {{hostname}}
   
     - name: add new hostname in /etc/hosts
       lineinfile:
         dest: /etc/hosts
-        line: '127.0.1.1 standby1'
+        line: '127.0.0.1 {{hostname}} {{hostname}}'
 
     - name: copy pg_hba file into the data folder
       copy: 
@@ -104,12 +106,13 @@
 - hosts: standby2
   tasks:
     - name: change host name
-      command: hostname standby2
+      hostname:
+        name: {{hostname}}
   
     - name: add new hostname in /etc/hosts
       lineinfile:
         dest: /etc/hosts
-        line: '127.0.1.1 standby2'
+        line: '127.0.0.1 {{hostname}} {{hostname}}'
 
     - name: copy pg_hba file into the data folder
       copy: 
@@ -165,7 +168,7 @@
       - name: add barman server ip address to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
-          line: 'Host 192.168.33.9'
+          line: 'Host backup'
       
       - name: add user to config
         lineinfile:

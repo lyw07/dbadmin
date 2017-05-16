@@ -33,6 +33,15 @@
       apt: 
         name: barman-cli
 
+    - name: change the hostname
+      hostname:
+        name: "{{hostname}}"
+
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.0.1 {{hostname}} {{hostname}}' 
+
     - name: Copy barman server configuration into /etc/barman.d
       copy: 
         src: config/barman/barman.conf
@@ -47,24 +56,6 @@
       copy: 
         src: config/barman/standby1.conf
         dest: /etc/barman.d/
-
-    - name: add server pg's ip address into hosts file
-      lineinfile:
-        dest: /etc/hosts
-        line: '192.168.33.10  pg'
-
-    - name: add server pg's ip address into hosts file
-      lineinfile:
-        dest: /etc/hosts
-        line: '192.168.33.11  standby1'
-
-    - name: change the hostname
-      command: hostname backup
-
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.1.1 backup' 
 
     - name: install pip
       command: aptitude install -y python-pip

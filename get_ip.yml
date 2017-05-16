@@ -1,0 +1,16 @@
+---
+- hosts: all
+  tasks:
+    - template: 
+        src: ip_tmp.j2
+        dest: /home/vagrant/ip_tmp
+
+    - name: get the content inside the ip_tmp file
+      shell: "cat /home/vagrant/ip_tmp"
+      register: ip
+
+    - name: put the ip addresses of all machines into hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: "{{ ip.stdout }}"
+

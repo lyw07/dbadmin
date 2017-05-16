@@ -12,7 +12,7 @@
         state: absent
 
     - name: clone standby
-      command: repmgr -h 192.168.33.10 -d repmgr -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
+      command: repmgr -h pg -d repmgr -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
       become: true
       become_user: postgres
       become_method: sudo

@@ -28,12 +28,12 @@
     - name: add standby1's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
-        line: 'Host 192.168.33.11'
+        line: 'Host standby1'
 
     - name: add standby2's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
-        line: 'Host 192.168.33.12'
+        line: 'Host standby2'
 
     - name: ignore ssh host key checking
       lineinfile:

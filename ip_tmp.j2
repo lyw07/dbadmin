@@ -1,3 +1,0 @@
-{% for host in groups['all'] %}
-   {{ hostvars[host]['ansible_eth1']['ipv4']['address'] ~ " " ~ hostvars[host]['ansible_hostname'] }} 
-{% endfor %}

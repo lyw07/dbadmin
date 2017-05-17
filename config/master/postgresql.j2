@@ -1,3 +1,7 @@
+{% for host in groups['barman'] -%}
+{% for name in groups['master'] -%}
+{% for one in groups['standby1'] -%}
+{% for two in groups['standby2'] -%}
 # -----------------------------
 # PostgreSQL configuration file
 # -----------------------------
@@ -56,7 +60,7 @@ external_pid_file = '/var/run/postgresql/9.6-main.pid'			# write an extra PID fi
 
 # - Connection Settings -
 
-listen_addresses = '*'		# what IP address(es) to listen on;
+listen_addresses = {{ "'"~hostvars[host]['ip']~", "~hostvars[name]['ip']~", "~hostvars[one]['ip']~", "~hostvars[two]['ip']~"'" }}		# what IP address(es) to listen on;
 					# comma-separated list of addresses;
 					# defaults to 'localhost'; use '*' for all
 					# (change requires restart)
@@ -141,7 +145,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 
 #max_files_per_process = 1000		# min 25
 					# (change requires restart)
-shared_preload_libraries = 'repmgr_funcs'		# (change requires restart)
+#shared_preload_libraries = ''		# (change requires restart)
 
 # - Cost-Based Vacuum Delay -
 
@@ -213,7 +217,7 @@ wal_level = replica			# minimal, replica, or logical
 
 archive_mode = on		# enables archiving; off, on, or always
 				# (change requires restart)
-archive_command = 'rsync -a %p barman@backup:/var/lib/barman/standby1/incoming/%f'		# command to use to archive a logfile segment
+archive_command = 'rsync -a %p barman@{{ hostvars[host]['hostname'] }}:/var/lib/barman/{{ hostvars[name]['hostname'] }}/incoming/%f'		# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
 				#               %f = file name only
 				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
@@ -639,3 +643,7 @@ default_text_search_config = 'pg_catalog.english'
 #------------------------------------------------------------------------------
 
 # Add settings for extensions here
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}

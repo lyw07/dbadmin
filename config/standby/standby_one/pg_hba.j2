@@ -1,3 +1,5 @@
+{% for host in groups['barman'] -%}
+{% for name in groups['standby1'] -%}
 # PostgreSQL Client Authentication Configuration File
 # ===================================================
 #
@@ -95,16 +97,18 @@
 local   replication     postgres                                peer
 host    replication     postgres        127.0.0.1/32            md5
 host    replication     postgres        ::1/128                 md5
-host	replication	postgres	192.168.33.9/32		trust
-host	all		postgres	192.168.33.9/32		trust
+host	replication	postgres	{{ hostvars[host]['ip'] }}/32		trust
+host	all		postgres	{{ hostvars[host]['ip'] }}/32		trust
 
 local   replication   	repmgr                              	trust
 host    replication   	repmgr      	127.0.0.1/32            trust
-host	replication	repmgr		192.168.33.11/24	trust
+host	replication	repmgr		{{ hostvars[name]['ip'] }}/24	trust
 
 local   repmgr        	repmgr                             	trust 
 host    repmgr        	repmgr      	127.0.0.1/32           	trust 
-host	repmgr		repmgr		192.168.33.11/24	trust	
+host	repmgr		repmgr		{{ hostvars[name]['ip'] }}/24	trust	
 local   all             all                                     peer
 host    all             all             127.0.0.1/32            md5
 host    all             all             ::1/128                 md5
+{%- endfor %}
+{%- endfor %}

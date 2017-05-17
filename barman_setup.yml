@@ -33,29 +33,21 @@
       apt: 
         name: barman-cli
 
-    - name: change the hostname
-      hostname:
-        name: "{{hostname}}"
-
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.0.1 {{hostname}} {{hostname}}' 
-
     - name: Copy barman server configuration into /etc/barman.d
-      copy: 
+      template: 
         src: config/barman/barman.conf
-        dest: /etc/
+        dest: /etc/barman.conf
 
     - name: Copy database server pg 's configuration into /etc/barman.d
-      copy: 
-        src: config/barman/pg.conf
-        dest: /etc/barman.d/
+      template: 
+        src: config/barman/pg.j2
+        dest: /etc/barman.d/pg.conf
+
 
     - name: Copy database server standby 's configuration into /etc/barman.d
-      copy: 
-        src: config/barman/standby1.conf
-        dest: /etc/barman.d/
+      template: 
+        src: config/barman/standby1.j2
+        dest: /etc/barman.d/standby1.conf
 
     - name: install pip
       command: aptitude install -y python-pip
@@ -81,7 +73,7 @@
 
     - name: create incoming wal directory for master server
       file:
-        path: /var/lib/barman/pg/incoming
+        path: /var/lib/barman/{{ hostvars[groups['master'][0]]['hostname'] }}/incoming
         state: directory
         owner: barman
         group: barman
@@ -89,7 +81,7 @@
 
     - name: create incoming wal directory for standby server
       file:
-        path: /var/lib/barman/standby1/incoming
+        path: /var/lib/barman/{{ hostvars[groups['standby1'][0]]['hostname'] }}/incoming
         state: directory
         owner: barman
         group: barman

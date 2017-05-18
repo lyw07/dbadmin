@@ -75,40 +75,19 @@
 # configuration parameter, or via the -i or -h command line switches.
 
 
-
-
-# DO NOT DISABLE!
-# If you change this first entry you will need to make sure that the
-# database superuser can access the database using some other method.
-# Noninteractive access to all databases is required during automatic
-# maintenance (custom daily cronjobs, replication, and similar tasks).
-#
-# Database administrative login by Unix domain socket
-
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 
-# "local" is for Unix domain socket connections only
-# IPv4 local connections:
-# IPv6 local connections:
-# Allow replication connections from localhost, by a user with the
-# replication privilege.
-# IPv4 local connections:
-# IPv6 local connections:
-local   replication     postgres                                peer
-host    replication     postgres        127.0.0.1/32            md5
-host    replication     postgres        ::1/128                 md5
-host	replication	postgres	{{ hostvars[host]['ip'] }}/32		trust
-host	all		postgres	{{ hostvars[host]['ip'] }}/32		trust
+# Allow any user on the local system to connect to any database with
+# any database user name using Unix-domain sockets (the default for local
+# connections).
+local   all             all                                     trust
 
-local   replication   	repmgr                              	trust
-host    replication   	repmgr      	127.0.0.1/32            trust
-host	replication	repmgr		{{ hostvars[name]['ip'] }}/24	trust
+# Allow barman server to connect to all databases and do replication
+host	replication	all	{{ hostvars[host]['ip'] }}/32		    trust
+host	all		all	{{ hostvars[host]['ip'] }}/32		        trust
 
-local   repmgr        	repmgr                             	trust 
-host    repmgr        	repmgr      	127.0.0.1/32           	trust 
-host	repmgr		repmgr		{{ hostvars[name]['ip'] }}/24	trust	
-local   all             all                                     peer
-host    all             all             127.0.0.1/32            md5
-host    all             all             ::1/128                 md5
+
+host	replication	all		{{ hostvars[name]['ip'] }}/24	trust 
+host	all		all		{{ hostvars[name]['ip'] }}/24	trust
 {%- endfor %}
 {%- endfor %}

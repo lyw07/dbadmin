@@ -72,6 +72,11 @@
 
 - hosts: standby1
   tasks:
+    - name: copy postgresql configuration file into the data folder
+      template: 
+        src: config/standby/standby_one/postgresql.j2
+        dest: /etc/postgresql/9.6/main/postgresql.conf
+
     - name: copy pg_hba file into the data folder
       template: 
         src: config/standby/standby_one/pg_hba.j2
@@ -84,6 +89,11 @@
 
 - hosts: standby2
   tasks:
+    - name: copy postgresql configuration file into the data folder
+      template: 
+        src: config/standby/standby_two/postgresql.j2
+        dest: /etc/postgresql/9.6/main/postgresql.conf
+
     - name: copy pg_hba file into the data folder
       template: 
         src: config/standby/standby_two/pg_hba.j2
@@ -113,11 +123,6 @@
     - name: install barman-cli
       apt: 
         name: barman-cli
-
-    - name: copy postgresql configuration file into the data folder
-      template: 
-        src: config/standby/postgresql.j2
-        dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - block: 
       - name: generate ssh keys

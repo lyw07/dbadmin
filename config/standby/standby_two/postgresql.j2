@@ -215,7 +215,7 @@ wal_level = replica			# minimal, replica, or logical
 
 archive_mode = on		# enables archiving; off, on, or always
 				# (change requires restart)
-archive_command = '/bin/true'		# command to use to archive a logfile segment
+archive_command = 'rsync -a %p barman@{{ hostvars[host]['hostname'] }}:/var/lib/barman/{{ hostvars[name]['hostname'] }}/incoming/%f'		# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
 				#               %f = file name only
 				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'

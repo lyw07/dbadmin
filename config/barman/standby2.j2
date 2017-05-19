@@ -1,8 +1,8 @@
-{% for host in groups['standby1'] -%} 
+{% for host in groups['standby2'] -%} 
 
 [{{ hostvars[host]['hostname'] }}]
 ; Human readable description
-description =  "Standby Server One"
+description =  "Standby Server Two"
 
 ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PostgreSQL connection string (mandatory)

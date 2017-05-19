@@ -44,10 +44,15 @@
         dest: /etc/barman.d/pg.conf
 
 
-    - name: Copy database server standby 's configuration into /etc/barman.d
+    - name: Copy database server standby1 's configuration into /etc/barman.d
       template: 
         src: config/barman/standby1.j2
         dest: /etc/barman.d/standby1.conf
+
+    - name: Copy database server standby2 's configuration into /etc/barman.d
+      template: 
+        src: config/barman/standby2.j2
+        dest: /etc/barman.d/standby2.conf
 
     - name: install pip
       command: aptitude install -y python-pip
@@ -79,9 +84,17 @@
         group: barman
         mode: 0755
 
-    - name: create incoming wal directory for standby server
+    - name: create incoming wal directory for standby1 server
       file:
         path: /var/lib/barman/{{ hostvars[groups['standby1'][0]]['hostname'] }}/incoming
+        state: directory
+        owner: barman
+        group: barman
+        mode: 0755
+
+    - name: create incoming wal directory for standby2 server
+      file:
+        path: /var/lib/barman/{{ hostvars[groups['standby2'][0]]['hostname'] }}/incoming
         state: directory
         owner: barman
         group: barman

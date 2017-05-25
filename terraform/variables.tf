@@ -1,21 +1,19 @@
 variable "region" {
-  default = "us-central"
+  description = "The region of the Google Cloud Project"
 }
 
 variable "zone" {
-	default = "us-central1-c"	
+	description = "The zone of the resource"
 }
 
 variable "machine_type" {
-	default = "f1-micro"
+	description = "Machine type of the Google Compute Instance"
 }
 
 variable "project_name" {
   description = "The ID of the Google Cloud Project"
-  default = "testing-168423"
 }
 
 variable "account_file_path" {
   description = "Path to the JSON file used to describe your account credentials"
-  default = "testing-4e08eebba610.json"
 }

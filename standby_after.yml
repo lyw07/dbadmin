@@ -1,7 +1,7 @@
 ---
 - hosts: standby
   tasks:   
-    - name: stop server
+    - name: stop standby server
       service:
         name: postgresql
         state: stopped

@@ -10,7 +10,7 @@
       template: 
         src: config/master/pg_hba.j2
         dest: /etc/postgresql/9.6/main/pg_hba.conf
-
+        
     - name: create repmgr.conf
       template:
         src: config/master/repmgr.j2
@@ -143,7 +143,7 @@
           dest: /var/lib/postgresql/.ssh/config
           line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
       
-      - name: add user to config
+      - name: add user barman to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'User barman'

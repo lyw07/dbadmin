@@ -27,39 +27,36 @@
     - name: install repmgr
       apt:
         name: repmgr
-        force: yes
-
-    - name: install barman-cli
-      apt: 
-        name: barman-cli
 
     - name: Copy barman server configuration into /etc/barman.d
       template: 
         src: config/barman/barman.conf
         dest: /etc/barman.conf
 
-    - name: Copy database server pg 's configuration into /etc/barman.d
+    - name: Copy database server pg's configuration into /etc/barman.d
       template: 
         src: config/barman/pg.j2
         dest: /etc/barman.d/pg.conf
 
 
-    - name: Copy database server standby1 's configuration into /etc/barman.d
+    - name: Copy database server standby1's configuration into /etc/barman.d
       template: 
         src: config/barman/standby1.j2
         dest: /etc/barman.d/standby1.conf
 
-    - name: Copy database server standby2 's configuration into /etc/barman.d
+    - name: Copy database server standby2's configuration into /etc/barman.d
       template: 
         src: config/barman/standby2.j2
         dest: /etc/barman.d/standby2.conf
 
     - name: install pip
-      command: aptitude install -y python-pip
+      apt:
+        name: python-pip
 
-    - name: install python-pexpect
-      command: pip install pexpect
-    
+    - name: install pexpect
+      pip:
+        name: pexpect
+
     - name: generate ssh keys
       expect: 
         command: ssh-keygen -t rsa

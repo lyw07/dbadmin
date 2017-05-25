@@ -83,11 +83,11 @@
 local   all             all                                     trust
 
 # Allow barman server to connect to all databases and do replication
-host	replication	all	{{ hostvars[host]['ip'] }}/32		    trust
-host	all		all	{{ hostvars[host]['ip'] }}/32		        trust
+host	replication	all	{{ hostvars[host]['internal_ip'] }}/32		    trust
+host	all		all	{{ hostvars[host]['internal_ip'] }}/32		        trust
 
 
-host	replication	all		{{ hostvars[name]['ip'] }}/24	trust 
-host	all		all		{{ hostvars[name]['ip'] }}/24	trust
+host	replication	all		{{ hostvars[name]['internal_ip'] }}/32	trust 
+host	all		all		{{ hostvars[name]['internal_ip'] }}/32	trust
 {%- endfor %}
 {%- endfor %}

@@ -28,12 +28,12 @@
     - name: add standby1's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
-        line: 'Host 192.168.33.11'
+        line: "Host {{ hostvars[groups['standby1'][0]]['hostname'] }}"
 
     - name: add standby2's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
-        line: 'Host 192.168.33.12'
+        line: "Host {{ hostvars[groups['standby2'][0]]['hostname'] }}"
 
     - name: ignore ssh host key checking
       lineinfile:
@@ -41,7 +41,7 @@
         line: 'StrictHostKeyChecking no'
 
     - name: create replication slot
-      command: barman receive-wal --create-slot pg
+      command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
 
     - name: cron
       command: barman cron
@@ -57,7 +57,7 @@
         job: "/usr/bin/barman cron"
 
     - name: switch-xlog
-      command: barman switch-xlog --force --archive pg
+      command: barman switch-xlog --force --archive {{ hostvars[groups['master'][0]]['hostname'] }}
 
     - name: backup data
-      command: barman backup pg
+      command: barman backup {{ hostvars[groups['master'][0]]['hostname'] }}

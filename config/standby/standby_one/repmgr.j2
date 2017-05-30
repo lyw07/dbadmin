@@ -1,3 +1,6 @@
+{% for host in groups['barman'] -%}
+{% for name in groups['master'] -%}
+{% for standby in groups['standby1'] -%}
 ###################################################
 # Replication Manager sample configuration file
 ###################################################
@@ -15,14 +18,14 @@
 # schema (pattern: "repmgr_{cluster}"); while this name will be quoted
 # to preserve case, we recommend using lower case and avoiding whitespace
 # to facilitate easier querying of the repmgr views and tables.
-cluster=pg
+cluster={{ hostvars[name]['hostname'] }}
 
 # Node ID and name
 # (Note: we recommend to avoid naming nodes after their initial
 #  replication function, as this will cause confusion when e.g.
 #  "standby2" is promoted to primary)
-node=3           # a unique integer
-node_name=node3  # an arbitrary (but unique) string; we recommend using
+node=2           # a unique integer
+node_name=node2  # an arbitrary (but unique) string; we recommend using
                  # the server's hostname or another identifier unambiguously
                  # associated with the server to avoid confusion
 
@@ -31,7 +34,7 @@ node_name=node3  # an arbitrary (but unique) string; we recommend using
 #
 #   https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
 #
-conninfo='host=192.168.33.12 dbname=repmgr user=repmgr connect_timeout=2'
+conninfo='host={{ hostvars[standby]['hostname'] }} dbname=repmgr user=repmgr connect_timeout=2'
 #
 # If repmgrd is in use, consider explicitly setting `connect_timeout` in the
 # conninfo string to determine the length of time which elapses before
@@ -147,7 +150,7 @@ ssh_options=-o "StrictHostKeyChecking no"
 
 # This is the host name of the barman server, which is used for connecting over
 # to the barman server (passwordless ssh keys should be in place)
-barman_server=192.168.33.9
+barman_server={{ hostvars[host]['hostname'] }}
 # If you are placing the barman.conf file in a non-standard path, or using
 # a name other than barman.conf, use this parameter to specify the path and
 # name of the barman configuration file.
@@ -165,7 +168,7 @@ barman_config='/etc/barman.conf'
 # You can specify a restore_command to be used in the recovery.conf that
 # will be placed in the cloned standby
 #
-restore_command = /usr/bin/barman-wal-restore -U barman 192.168.33.9 pg %f %p
+restore_command = /usr/bin/barman-wal-restore -U barman {{ hostvars[host]['hostname'] }} {{ hostvars[name]['hostname'] }} %f %p
 
 # Failover settings (repmgrd)
 # ---------------------------
@@ -211,3 +214,6 @@ retry_promote_interval_secs=300
 
 # Number of seconds after which the witness server resyncs the repl_nodes table
 #witness_repl_nodes_sync_interval_secs=15
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}

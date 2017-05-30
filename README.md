@@ -1,4 +1,4 @@
-## Back up database using Barman and Repmgr
+## Backup database using Barman and Repmgr
 
 
 Requirements
@@ -19,7 +19,7 @@ It also uses **ansible** to configure these four machines. The file `hosts` show
 
 The bash script `config-server.sh` will be run so that the machines will be configured in the order that we desire. 
 
-The six ansible-playbooks are `barman-setup.yml` which configures barman server, `postgresql.yml` which mainly installs postgresql on the master server (machine2) and two standby servers (machine3 and machine4), `db_setup.yml` which configures the master server and two standby servers, `barman_after.yml` which start data backup of the master server in barman, `standby_after.yml` which clone the data of master server to the standby servers and start repmgrd in the standby servers, and `barman_standby.yml` which creates a replication slot named barman in standby server such that once the standby server gets promoted to be master, barman will receive WAL files of the standby.
+The seven ansible-playbooks are `get_ip.yml` which gets the ip addresses of all the machines and puts them into /etc/hosts so that they can talk to each other, `barman-setup.yml` which configures barman server, `postgresql.yml` which mainly installs postgresql on the master server (machine2) and two standby servers (machine3 and machine4), `db_setup.yml` which configures the master server and two standby servers, `barman_after.yml` which starts data backup of the master server in barman, `standby_after.yml` which clones the data of master server to the standby servers and starts repmgrd in the standby servers, and `barman_standby.yml` which creates a replication slot named barman in standby servers such that once the standby server gets promoted to be master, barman will receive WAL files of the standby.
 
 The configuration files of the four machines are stored in the folder `config` accordingly. 
 

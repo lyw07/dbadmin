@@ -1,8 +1,14 @@
 ---
 - hosts: barman
   tasks:
-    - name: create replication slot
-      command: barman receive-wal --create-slot standby1
+    - name: create replication slot for standby1
+      command: barman receive-wal --create-slot {{ hostvars[groups['standby1'][0]]['hostname'] }}
+      become: true
+      become_method: sudo
+      become_user: barman
+
+    - name: create replication slot for standby2
+      command: barman receive-wal --create-slot {{ hostvars[groups['standby2'][0]]['hostname'] }}
       become: true
       become_method: sudo
       become_user: barman

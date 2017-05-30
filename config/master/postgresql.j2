@@ -1,3 +1,5 @@
+{% for host in groups['barman'] -%}
+{% for name in groups['master'] -%}
 # -----------------------------
 # PostgreSQL configuration file
 # -----------------------------
@@ -56,7 +58,7 @@ external_pid_file = '/var/run/postgresql/9.6-main.pid'			# write an extra PID fi
 
 # - Connection Settings -
 
-listen_addresses = '*'		# what IP address(es) to listen on;
+listen_addresses = {{ "'"~hostvars[name]['ip']~"'" }}		# what IP address(es) to listen on;
 					# comma-separated list of addresses;
 					# defaults to 'localhost'; use '*' for all
 					# (change requires restart)
@@ -213,7 +215,7 @@ wal_level = replica			# minimal, replica, or logical
 
 archive_mode = on		# enables archiving; off, on, or always
 				# (change requires restart)
-archive_command = 'rsync -a %p barman@192.168.33.9:/var/lib/barman/pg/incoming/%f'		# command to use to archive a logfile segment
+archive_command = 'rsync -a %p barman@{{ hostvars[host]['hostname'] }}:/var/lib/barman/{{ hostvars[name]['hostname'] }}/incoming/%f'		# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
 				#               %f = file name only
 				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
@@ -639,3 +641,5 @@ default_text_search_config = 'pg_catalog.english'
 #------------------------------------------------------------------------------
 
 # Add settings for extensions here
+{%- endfor %}
+{%- endfor %}

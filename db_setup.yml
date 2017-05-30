@@ -2,30 +2,20 @@
 - hosts: master
   tasks:
     - name: copy postgresql configuration file into the data folder
-      copy: 
-        src: config/master/postgresql.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
+      template: 
+        src: config/master/postgresql.j2
+        dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
-      copy: 
-        src: config/master/pg_hba.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
+      template: 
+        src: config/master/pg_hba.j2
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
-      copy:
-        src: config/master/repmgr.conf
-        dest: /etc/
+      template:
+        src: config/master/repmgr.j2
+        dest: /etc/repmgr.conf
  
-    - name: change the hostname
-      command: hostname pg
-
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.1.1 pg' 
-
     - block: 
       - name: generate ssh keys
         expect: 
@@ -43,7 +33,7 @@
       - name: add barman server's ip address to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
-          line: 'Host 192.168.33.9'
+          line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
 
       - name: ignore ssh host key checking
         lineinfile:
@@ -82,45 +72,37 @@
 
 - hosts: standby1
   tasks:
-    - name: change host name
-      command: hostname standby1
-  
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.1.1 standby1'
+    - name: copy postgresql configuration file into the data folder
+      template: 
+        src: config/standby/standby_one/postgresql.j2
+        dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
-      copy: 
-        src: config/standby/standby_one/pg_hba.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
+      template: 
+        src: config/standby/standby_one/pg_hba.j2
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
-      copy:
-        src: config/standby/standby_one/repmgr.conf
-        dest: /etc/
+      template:
+        src: config/standby/standby_one/repmgr.j2
+        dest: /etc/repmgr.conf
 
 - hosts: standby2
   tasks:
-    - name: change host name
-      command: hostname standby2
-  
-    - name: add new hostname in /etc/hosts
-      lineinfile:
-        dest: /etc/hosts
-        line: '127.0.1.1 standby2'
+    - name: copy postgresql configuration file into the data folder
+      template: 
+        src: config/standby/standby_two/postgresql.j2
+        dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
-      copy: 
-        src: config/standby/standby_two/pg_hba.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
+      template: 
+        src: config/standby/standby_two/pg_hba.j2
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
-      copy:
-        src: config/standby/standby_two/repmgr.conf
-        dest: /etc/
+      template:
+        src: config/standby/standby_two/repmgr.j2
+        dest: /etc/repmgr.conf
 
 
 - hosts: standby
@@ -142,12 +124,6 @@
       apt: 
         name: barman-cli
 
-    - name: copy postgresql configuration file into the data folder
-      copy: 
-        src: config/standby/postgresql.conf
-        dest: /etc/postgresql/9.6/main/
-        mode: 0600
-
     - block: 
       - name: generate ssh keys
         expect: 
@@ -165,7 +141,7 @@
       - name: add barman server ip address to config
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
-          line: 'Host 192.168.33.9'
+          line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
       
       - name: add user to config
         lineinfile:

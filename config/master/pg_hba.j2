@@ -80,14 +80,19 @@
 # Allow any user on the local system to connect to any database with
 # any database user name using Unix-domain sockets (the default for local
 # connections).
-local   all             all                                     trust
+local   replication     all                                     trust
 
 # Allow barman server to connect to all databases and do replication
-host	replication	all	{{ hostvars[host]['ip'] }}/32		    trust
-host	all		all	{{ hostvars[host]['ip'] }}/32		        trust
+host    replication     all             {{ hostvars[host]['internal_ip'] }}/32           trust
+host    all             all             {{ hostvars[host]['internal_ip'] }}/32           trust
 
+local   replication     all                                     trust
+host    replication     all             127.0.0.1/32            trust
+host    replication     all             {{ hostvars[name]['internal_ip'] }}/24           trust 
+local   all             all                                     trust
+host    all             all             127.0.0.1/32            trust
+host    all             all             {{ hostvars[name]['internal_ip'] }}/24           trust
 
-host	replication	all		{{ hostvars[name]['ip'] }}/24	trust 
-host	all		all		{{ hostvars[name]['ip'] }}/24	trust	
+local   all             all                                     trust
 {%- endfor %}
 {%- endfor %}

@@ -1,16 +1,15 @@
-machine1 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2222 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.9
+# https://cloud.google.com/compute/docs/instances/connecting-to-instance
+machine1 ansible_host=104.154.192.179 internal_ip=10.128.0.2 ansible_user=lingyi ansible_ssh_private_key_file=/Users/lingyiwang/.ssh/my-ssh-key ansible_become=true hostname=backup
 
-machine2 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2200 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.10
+machine2 ansible_host=104.154.79.63 internal_ip=10.128.0.5 ansible_user=lingyi ansible_ssh_private_key_file=/Users/lingyiwang/.ssh/my-ssh-key ansible_become=true hostname=pg 
 
-machine3 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.11
+machine3 ansible_host=146.148.87.67 internal_ip=10.128.0.4 ansible_user=lingyi ansible_ssh_private_key_file=/Users/lingyiwang/.ssh/my-ssh-key ansible_become=true hostname=standby1
 
-machine4 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2202 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.12
+machine4 ansible_host=35.188.44.21 internal_ip=10.128.0.3 ansible_user=lingyi ansible_ssh_private_key_file=/Users/lingyiwang/.ssh/my-ssh-key ansible_become=true hostname=standby2
 
 [barman]
 machine1
 
-[barman:vars]
-hostname=backup
 
 [db]
 machine2
@@ -20,14 +19,8 @@ machine4
 [standby1]
 machine3
 
-[standby1:vars]
-hostname=standby1
-
 [standby2]
 machine4
-
-[standby2:vars]
-hostname=standby2
 
 [standby]
 machine3
@@ -35,9 +28,6 @@ machine4
 
 [master]
 machine2
-
-[master:vars]
-hostname=pg
 
 [all]
 machine1

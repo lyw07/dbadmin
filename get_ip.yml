@@ -1,6 +1,14 @@
 ---
 - hosts: all
   tasks:
+    - name: install dbus
+      apt:
+        update_cache: yes
+        name: dbus
+
+    - name: install rsync
+      apt:
+        name: rsync
     - name: change the hostname
       hostname:
         name: "{{ hostname }}"

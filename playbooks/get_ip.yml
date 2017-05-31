@@ -19,7 +19,7 @@
         line: '127.0.0.1 {{ hostname }} {{ hostname }}' 
 
     - template: 
-        src: ip.j2
+        src: ../ip.j2
         dest: /var/lib/ip_tmp
 
     - name: get the content inside the ip_tmp file

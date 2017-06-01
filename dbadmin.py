@@ -8,12 +8,15 @@ _bootstrap_commands = [
     'pip install --upgrade pip',
     'sudo pip install ansible pystache',
     'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
-    '[ -d ".dbadmin/bin" ] || mkdir -p .dbadmin/bin',
+    'mkdir -p .dbadmin/bin',
     'unzip /tmp/terraform.zip -d ./.dbadmin/bin',
-    '[ -d ".dbadmin/repo" ] || mkdir -p .dbadmin/repo',
+    'mkdir -p .dbadmin/repo',
     'git clone http://github.com/bsubrama/backupdb.git ./.dbadmin/repo',
+    'mkdir -p .dbadmin/terraform',
     'cp -rf ./.dbadmin/repo/terraform ./.dbadmin/terraform',
+    'mkdir -p .dbadmin/playbooks',
     'cp -rf ./.dbadmin/repo/playbooks ./.dbadmin/playbooks',
+    'mkdir -p .dbadmin/config',
     'cp -rf ./.dbadmin/repo/config ./.dbadmin/config',
 ]
 
@@ -25,7 +28,7 @@ def _install_pystache_if_needed():
     try:
         imp.find_module('pystache')
     except:
-        subprocess.check_call('sudo pip install pystache'.split())
+        subprocess.check_call('sudo pip install pystache'.split(), shell=True)
 
 def _apply_template(template_file, args, output_file):
     install_pystache_if_needed()

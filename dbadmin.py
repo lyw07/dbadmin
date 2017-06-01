@@ -2,6 +2,7 @@
 import argparse
 import subprocess
 import imp
+import os
 
 _bootstrap_commands = [
     'echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list',
@@ -22,6 +23,7 @@ _bootstrap_commands = [
     'cp -rf .dbadmin/repo/terraform .dbadmin',
     'cp -rf .dbadmin/repo/playbooks .dbadmin',
     'cp -rf .dbadmin/repo/config .dbadmin',
+    'touch .dbadmin/bootstrap_complete',
 ]
 
 _terraform_commands = [
@@ -76,7 +78,8 @@ def terraform_handler(args):
 def bootstrap_handler(args):
     # Installs dependencies needed for the dbadmin tool to work.
     # Stops on the first error.
-    _run_commands(_bootstrap_commands)
+    if not os.path.isfile('.dbadmin/bootstrap_complete'):
+        _run_commands(_bootstrap_commands)
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Subcommand help')

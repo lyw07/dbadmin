@@ -72,7 +72,7 @@ parser = argparse.ArgumentParser(description="LearningEquality database administ
 subparsers = parser.add_subparsers(help='Subcommand help')
 
 bootstrap_parser = subparsers.add_parser('bootstrap', help='Installs dependencies needed by the admin tool')
-terraform_parser.set_defaults(handler=bootstrap_handler)
+bootstrap_parser.set_defaults(handler=bootstrap_handler)
 
 terraform_parser = subparsers.add_parser('terraform', help='terraform help')
 terraform_parser.add_argument('--project_id', required=True, help='The GCE project id.')

@@ -11,16 +11,16 @@ _bootstrap_commands = [
     'mkdir -p .dbadmin/bin',
     'unzip /tmp/terraform.zip -d ./.dbadmin/bin',
     'mkdir -p .dbadmin/repo',
+    'mkdir -p .dbadmin/terraform',
+    'mkdir -p .dbadmin/playbooks',
+    'mkdir -p .dbadmin/config',
     'git clone http://github.com/bsubrama/backupdb.git ./.dbadmin/repo',
     'cd ./.dbadmin/repo',
     'git checkout gce',
+    'cp -rf terraform ../terraform',
+    'cp -rf playbooks ../playbooks',
+    'cp -rf config ../config',
     'cd ../..',
-    'mkdir -p .dbadmin/terraform',
-    'cp -rf ./.dbadmin/repo/terraform ./.dbadmin/terraform',
-    'mkdir -p .dbadmin/playbooks',
-    'cp -rf ./.dbadmin/repo/playbooks ./.dbadmin/playbooks',
-    'mkdir -p .dbadmin/config',
-    'cp -rf ./.dbadmin/repo/config ./.dbadmin/config',
 ]
 
 _terraform_commands = [

@@ -10,17 +10,15 @@ _bootstrap_commands = [
     'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
     'mkdir -p .dbadmin/bin',
     'unzip /tmp/terraform.zip -d ./.dbadmin/bin',
+    'rm -rf .dbadmin/repo',
     'mkdir -p .dbadmin/repo',
     'mkdir -p .dbadmin/terraform',
     'mkdir -p .dbadmin/playbooks',
     'mkdir -p .dbadmin/config',
-    'git clone http://github.com/bsubrama/backupdb.git ./.dbadmin/repo',
-    'cd ./.dbadmin/repo',
-    'git checkout gce',
-    'cp -rf terraform ../terraform',
-    'cp -rf playbooks ../playbooks',
-    'cp -rf config ../config',
-    'cd ../..',
+    'git clone http://github.com/bsubrama/backupdb.git --branch gce .dbadmin/repo',
+    'cp -rf .dbadmin/repo/terraform .dbadmin',
+    'cp -rf .dbadmin/repo/playbooks .dbadmin',
+    'cp -rf .dbadmin/repo/config .dbadmin',
 ]
 
 _terraform_commands = [
@@ -34,7 +32,7 @@ def _install_pystache_if_needed():
         subprocess.check_call('sudo pip install pystache'.split(), shell=True)
 
 def _apply_template(template_file, args, output_file):
-    install_pystache_if_needed()
+    _install_pystache_if_needed()
     try:
         import pystache
         pystache.defaults.DELIMITERS = (u'[[', u']]')
@@ -83,7 +81,7 @@ terraform_parser = subparsers.add_parser('terraform', help='terraform help')
 terraform_parser.add_argument('--project_id', required=True, help='The GCE project id.')
 terraform_parser.add_argument('--zone', required=True, help='The GCE zone.')
 terraform_parser.add_argument('--region', required=True, help='The GCE region.')
-terraform_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-hdd', 'local-ssd'], help='The type of the disk.')
+terraform_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
 terraform_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
 terraform_parser.set_defaults(handler=terraform_handler)

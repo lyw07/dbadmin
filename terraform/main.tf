@@ -1,6 +1,6 @@
 provider "google" {
 	region = "${var.region}"
-	project = "${var.project_name}"
+	project = "${var.project_id}"
   // Uncomment if running from a local machine
   // credentials = "${file(var.account_file_path)}"
 }
@@ -12,7 +12,7 @@ resource "google_compute_instance" "barman" {
   machine_type = "${var.machine_type}"
   disk {
     image = "debian-8-jessie-v20170426"
-    type = "pd-hdd"
+    type = "pd-standard"
     size = "${var.disk_size}"
   }
 

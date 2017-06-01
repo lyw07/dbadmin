@@ -8,13 +8,13 @@ _bootstrap_commands = [
     'pip install --upgrade pip',
     'sudo pip install ansible pystache',
     'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
-    'mkdir -p .dbadmin/bin',
+    '[ -d ".dbadmin/bin" ] || mkdir -p .dbadmin/bin',
     'unzip /tmp/terraform.zip -d ./.dbadmin/bin',
-    'mkdir -p .dbadmin/repo',
+    '[ -d ".dbadmin/repo" ] || mkdir -p .dbadmin/repo',
     'git clone http://github.com/bsubrama/backupdb.git ./.dbadmin/repo',
-    'cp ./.dbadmin/repo/terraform ./.dbadmin/terraform',
-    'cp ./.dbadmin/repo/playbooks ./.dbadmin/playbooks',
-    'cp ./.dbadmin/repo/config ./.dbadmin/config',
+    'cp -rf ./.dbadmin/repo/terraform ./.dbadmin/terraform',
+    'cp -rf ./.dbadmin/repo/playbooks ./.dbadmin/playbooks',
+    'cp -rf ./.dbadmin/repo/config ./.dbadmin/config',
 ]
 
 _terraform_commands = [

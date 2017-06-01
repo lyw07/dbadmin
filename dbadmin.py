@@ -4,7 +4,10 @@ import subprocess
 import imp
 
 _bootstrap_commands = [
-    'sudo apt-get install -y unzip python-pip build-essential libssl-dev libffi-dev python-dev',
+    'echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list',
+    'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
+    'sudo apt-get update'
+    'sudo apt-get install -y gcsfuse unzip python-pip build-essential libssl-dev libffi-dev python-dev',
     'pip install --upgrade pip',
     'sudo pip install ansible pystache',
     'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
@@ -65,6 +68,10 @@ def terraform_handler(args):
     }
     _apply_template('./.dbadmin/repo/templates/terraform/variables.tf', tf_vars, './.dbadmin/terraform/variables.tf')
     _run_commands(_terraform_commands)
+
+    # Fetch the list of running instances using gcloud and their ip addresses. 
+    # Apply the ip address information to generate the hosts file used by ansible.
+    # 
 
 def bootstrap_handler(args):
     # Installs dependencies needed for the dbadmin tool to work.

@@ -7,7 +7,7 @@ _bootstrap_commands = [
     'sudo apt-get install -y unzip python-pip build-essential libssl-dev libffi-dev python-dev',
     'pip install --upgrade pip',
     'sudo pip install ansible pystache',
-    'curl https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip > /tmp/terraform.zip',
+    'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
     'mkdir .dbadmin',
     'mkdir .dbadmin/bin',
     'unzip /tmp/terraform.zip -d ./.dbadmin/bin',

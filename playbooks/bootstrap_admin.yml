@@ -1,0 +1,29 @@
+---
+- hosts: gateway
+
+  tasks:
+    - name: add gcsfuse to apt sources list
+      shell:  echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+    - name: add google cloud apt-key to apt-keys list
+      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    - name: install necessary packages
+      apt:
+        name: {{ item }}
+        update_cache: yes
+      with_items:
+        - gcsfuse
+        - build-essential
+        - libssl-dev
+        - libffi-dev
+        - python-dev
+    - name: install pystache
+      shell: pip install pystache
+      become: yes
+      become_method: sudo
+    - name: download and unarchive terraform
+      unarchive: 
+        src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip
+        dest: .dbadmin/bin
+        remote_src: true
+        creates: {{ ansible_env.HOME}/.dbadmin/bin/terraform
+    - name: 

@@ -1,7 +1,8 @@
 provider "google" {
 	region = "${var.region}"
 	project = "${var.project_name}"
-	credentials = "${file(var.account_file_path)}"
+  // Uncomment if running from a local machine
+  // credentials = "${file(var.account_file_path)}"
 }
 
 // create a new barman instance
@@ -11,6 +12,8 @@ resource "google_compute_instance" "barman" {
   machine_type = "${var.machine_type}"
   disk {
     image = "debian-8-jessie-v20170426"
+    type = "pd-hdd"
+    size = "${var.disk_size}"
   }
 
   network_interface {
@@ -19,7 +22,7 @@ resource "google_compute_instance" "barman" {
     access_config {
       nat_ip =""
     }
-  } 
+  }
 }
 
 // create a new master instance
@@ -30,6 +33,8 @@ resource "google_compute_instance" "master" {
 
   disk {
     image = "debian-8-jessie-v20170426"
+    type = "${var.disk_type}"
+    size = "${var.disk_size}"
   }
 
   network_interface {
@@ -49,6 +54,8 @@ resource "google_compute_instance" "standby1" {
   
   disk {
     image = "debian-8-jessie-v20170426"
+    type = "${var.disk_type}"
+    size = "${var.disk_size}"
   }
 
   network_interface {
@@ -68,6 +75,8 @@ resource "google_compute_instance" "standby2" {
   
   disk {
     image = "debian-8-jessie-v20170426"
+    type = "${var.disk_type}"
+    size = "${var.disk_size}"
   }
 
   network_interface {

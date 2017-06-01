@@ -27,3 +27,8 @@ variable "disk_size" {
   description = "The disk size to be used"
   default = "[[ disk_size ]]"
 }
+
+// Uncomment if running locally
+// variable "account_file_path" {
+//   description = "Path to the JSON file used to describe your account credentials"
+// }

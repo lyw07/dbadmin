@@ -63,7 +63,7 @@ def terraform_handler(args):
     _apply_template('./.dbadmin/repo/templates/terraform/variables.tf', tf_vars, './.dbadmin/terraform/variables.tf')
     _run_commands(_terraform_commands)
 
-def bootstrap_handler():
+def bootstrap_handler(args):
     # Installs dependencies needed for the dbadmin tool to work.
     # Stops on the first error.
     _run_commands(_bootstrap_commands)

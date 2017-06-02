@@ -89,13 +89,13 @@ def terraform_handler(args):
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [
-        'ansible-playbook -i hosts playbooks/get_ip.yml',
-        'ansible-playbook -i hosts playbooks/barman_setup.yml',
-        'ansible-playbook -i hosts playbooks/postgresql_install.yml',
-        'ansible-playbook -i hosts playbooks/db_setup.yml',
-        'ansible-playbook -i hosts playbooks/barman_after.yml',
-        'ansible-playbook -i hosts playbooks/standby_after.yml',
-        'ansible-playbook -i hosts playbooks/barman_standby.yml'
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/get_ip.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_setup.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/postgresql_install.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_setup.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_after.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/standby_after.yml',
+        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_standby.yml'
     ]
     _run_commands(ansible_commands)
 

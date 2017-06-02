@@ -19,6 +19,9 @@ _terraform_commands = [
     _home_dir + '/.dbadmin/bin/terraform apply ' + _home_dir + '/.dbadmin/terraform'
 ]
 
+def _as_array(val):
+    return val.split()
+
 def _install_pystache_if_needed():
     try:
         imp.find_module('pystache')
@@ -77,13 +80,13 @@ def terraform_handler(args):
     hosts_vars = {
         'barman': {
             'hostname': 'barman',
-            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output barman_external_ip'),
-            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output barman_internal_ip'),
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output barman_external_ip')),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output barman_internal_ip')),
         },
         'master': {
             'hostname': args.master_hostname,
-            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_external_ip'),
-            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_internal_ip'),
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_external_ip')),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_internal_ip')),
         },
         'standby': [
         ]
@@ -92,8 +95,8 @@ def terraform_handler(args):
         hostname = args.standby_hostname_prefix + str(i+1)
         hosts_vars['standby'].append({
             'hostname': hostname,
-            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_external_ip'),
-            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_internal_ip'),
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_external_ip')),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_internal_ip')),
         })
     _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 

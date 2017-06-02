@@ -7,18 +7,6 @@ import os
 _script_root = os.path.dirname(os.path.realpath(__file__))
 _home_dir = os.path.expanduser('~')
 
-_bootstrap_commands = [
-    'sudo apt-get update',
-    'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
-    'sudo pip install --upgrade pip',
-    'sudo pip install ansible',
-    'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml',
-]
-
-_terraform_commands = [
-    _home_dir + '/.dbadmin/bin/terraform apply ' + _home_dir + '/.dbadmin/terraform'
-]
-
 def _as_array(val):
     return val.split()
 
@@ -70,13 +58,13 @@ def terraform_handler(args):
         tf_vars['standby'].append({
             'hostname': hostname
         })
-    # TODO(bharadwajs) Also decompose main.tf to allow for some configurability in terms of number of replicas.
+    # Generate terraform files from templates and run terraform.
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    _run_commands(_terraform_commands)
+    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply ' + _home_dir + '/.dbadmin/terraform'))
 
-    # Generate the hosts file from the output of the terraform step
+    # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
             'hostname': 'barman',
@@ -89,8 +77,7 @@ def terraform_handler(args):
             'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_internal_ip')).rstrip(),
         },
         'standby': [
-        ]
-    }
+        ]}
     for i in xrange(args.num_standby):
         hostname = args.standby_hostname_prefix + str(i+1)
         hosts_vars['standby'].append({
@@ -100,7 +87,17 @@ def terraform_handler(args):
         })
     _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 
-    # TODO(bharadwajs) Also decompose barman_standby.yml to support the number of replicas requested.
+    # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
+    ansible_commands = [
+        'ansible-playbook -i hosts playbooks/get_ip.yml',
+        'ansible-playbook -i hosts playbooks/barman_setup.yml',
+        'ansible-playbook -i hosts playbooks/postgresql_install.yml',
+        'ansible-playbook -i hosts playbooks/db_setup.yml',
+        'ansible-playbook -i hosts playbooks/barman_after.yml',
+        'ansible-playbook -i hosts playbooks/standby_after.yml',
+        'ansible-playbook -i hosts playbooks/barman_standby.yml'
+    ]
+    _run_commands(ansible_commands)
 
     # Fetch the list of running instances using gcloud and their ip addresses. 
     # Apply the ip address information to generate the hosts file used by ansible.
@@ -108,9 +105,14 @@ def terraform_handler(args):
 
 def bootstrap_handler(args):
     # Installs dependencies needed for the dbadmin tool to work.
-    # Stops on the first error.
-    if not os.path.isfile('.dbadmin/bootstrap_complete'):
-        _run_commands(_bootstrap_commands)
+    bootstrap_commands = [
+        'sudo apt-get update',
+        'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
+        'sudo pip install --upgrade pip',
+        'sudo pip install ansible',
+        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml',
+    ]
+    _run_commands(bootstrap_commands)
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Subcommand help')

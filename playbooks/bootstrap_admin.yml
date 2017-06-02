@@ -16,6 +16,8 @@
         - gcsfuse
         - unzip
         - git
+      become: yes
+      become_method: sudo
     - name: install pystache
       pip: 
         name: pystache

@@ -4,26 +4,13 @@ import subprocess
 import imp
 import os
 
+_script_root = os.path.dirname(os.path.realpath(__file__))
 _bootstrap_commands = [
-    'echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list',
-    'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
-    'sudo apt-get update'
-    'sudo apt-get install -y gcsfuse unzip python-pip build-essential libssl-dev libffi-dev python-dev',
-    'pip install --upgrade pip',
-    'sudo pip install ansible pystache',
-    'curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip',
-    'mkdir -p .dbadmin/bin',
-    'unzip /tmp/terraform.zip -d ./.dbadmin/bin',
-    'rm -rf .dbadmin/repo',
-    'mkdir -p .dbadmin/repo',
-    'mkdir -p .dbadmin/terraform',
-    'mkdir -p .dbadmin/playbooks',
-    'mkdir -p .dbadmin/config',
-    'git clone http://github.com/bsubrama/backupdb.git --branch gce .dbadmin/repo',
-    'cp -rf .dbadmin/repo/terraform .dbadmin',
-    'cp -rf .dbadmin/repo/playbooks .dbadmin',
-    'cp -rf .dbadmin/repo/config .dbadmin',
-    'touch .dbadmin/bootstrap_complete',
+    'sudo apt-get update',
+    'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
+    'sudo pip install --upgrade pip',
+    'sudo pip install ansible',
+    'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml',
 ]
 
 _terraform_commands = [

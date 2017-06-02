@@ -1,29 +1,50 @@
 ---
 - hosts: gateway
-
   tasks:
     - name: add gcsfuse to apt sources list
       shell:  echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
     - name: add google cloud apt-key to apt-keys list
       shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-    - name: install necessary packages
-      apt:
-        name: {{ item }}
-        update_cache: yes
-      with_items:
-        - gcsfuse
-        - build-essential
-        - libssl-dev
-        - libffi-dev
-        - python-dev
-    - name: install pystache
-      shell: pip install pystache
+    - name: update apt cache
+      shell: apt-get update
       become: yes
       become_method: sudo
+    - name: install gcsfuse
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - gcsfuse
+        - unzip
+        - git
+    - name: install pystache
+      pip: 
+        name: pystache
+      become: yes
+      become_method: sudo
+    - name: create the bin directory
+      file:
+        path: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
+        state: directory
     - name: download and unarchive terraform
       unarchive: 
         src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip
-        dest: .dbadmin/bin
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
         remote_src: true
-        creates: {{ ansible_env.HOME}/.dbadmin/bin/terraform
-    - name: 
+        creates: "{{ lookup('env', 'HOME') }}/.dbadmin/bin/terraform"
+    - name: clone the backupdb git project (gce branch)
+      git:
+        repo: https://github.com/bsubrama/backupdb.git
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/repo"
+        version: gce
+    - name: copy terraform files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/terraform"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/terraform"
+    - name: copy config files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/config"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/config"
+    - name: copy ansible playbook files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/playbooks"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/playbooks"

@@ -5,6 +5,8 @@ import imp
 import os
 
 _script_root = os.path.dirname(os.path.realpath(__file__))
+_home_dir = os.path.expanduser('~')
+
 _bootstrap_commands = [
     'sudo apt-get update',
     'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
@@ -38,6 +40,7 @@ def _apply_template(template_file, args, output_file):
         return False
 
 def _run_commands(commands):
+    outputs = {}
     for command in commands:
         try:
             subprocess.check_call(command.split())
@@ -55,8 +58,14 @@ def terraform_handler(args):
         'disk_size': args.disk_size,
         'machine_type': args.machine_type,
     }
-    _apply_template('./.dbadmin/repo/templates/terraform/variables.tf', tf_vars, './.dbadmin/terraform/variables.tf')
+    # TODO(bharadwajs) Also decompose main.tf to allow for some configurability in terms of number of replicas.
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
     _run_commands(_terraform_commands)
+
+    # Generate the hosts file from the output of the terraform step
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+
+    # TODO(bharadwajs) Also decompose barman_standby.yml to support the number of replicas requested.
 
     # Fetch the list of running instances using gcloud and their ip addresses. 
     # Apply the ip address information to generate the hosts file used by ansible.

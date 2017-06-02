@@ -57,13 +57,45 @@ def terraform_handler(args):
         'disk_type': args.disk_type,
         'disk_size': args.disk_size,
         'machine_type': args.machine_type,
+        'master': {
+            'hostname': args.master_hostname
+        },
+        'standby': []
     }
+    for i in xrange(args.num_standby):
+        hostname = args.standby_hostname_prefix + str(i+1)
+        tf_vars['standby'].append({
+            'hostname': hostname
+        })
     # TODO(bharadwajs) Also decompose main.tf to allow for some configurability in terms of number of replicas.
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
     _run_commands(_terraform_commands)
 
     # Generate the hosts file from the output of the terraform step
-    # _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+    hosts_vars = {
+        'barman': {
+            'hostname': 'barman',
+            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output barman_external_ip'),
+            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output barman_internal_ip'),
+        },
+        'master': {
+            'hostname': args.master_hostname,
+            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_external_ip'),
+            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_internal_ip'),
+        },
+        'standby': [
+        ]
+    }
+    for i in xrange(args.num_standby):
+        hostname = args.standby_hostname_prefix + str(i+1)
+        hosts_vars['standby'].append({
+            'hostname': hostname,
+            'external_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_external_ip'),
+            'internal_ip': subprocess.check_output(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_internal_ip'),
+        })
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 
     # TODO(bharadwajs) Also decompose barman_standby.yml to support the number of replicas requested.
 
@@ -90,6 +122,9 @@ terraform_parser.add_argument('--region', required=True, help='The GCE region.')
 terraform_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
 terraform_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
+terraform_parser.add_argument('--master_hostname', default='master', help='Host name for the master')
+terraform_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances')
+terraform_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances')
 terraform_parser.set_defaults(handler=terraform_handler)
 
 args = parser.parse_args()

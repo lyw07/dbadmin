@@ -1,38 +1,38 @@
 # https://cloud.google.com/compute/docs/instances/connecting-to-instance
 
-barman ansible_host={{ barman.external_ip }} internal_ip={{ barman.internal_ip }} ansible_user={{ ansible_user }} ansible_become=true hostname=barman
+barman ansible_host=[[ barman.external_ip ]] internal_ip=[[ barman.internal_ip ]] ansible_user=[[ ansible_user ]] ansible_become=true hostname=barman
 
-{{ master.hostname }} ansible_host={{ master.external_ip }} internal_ip={{ master.internal_ip }} ansible_user={{ ansible_user }} ansible_become=true hostname={{ master.hostname }} 
+[[ master.hostname ]] ansible_host=[[ master.external_ip ]] internal_ip=[[ master.internal_ip ]] ansible_user=[[ ansible_user ]] ansible_become=true hostname=[[ master.hostname ]] 
 
-{{ #standby }}
-{{ hostname }} ansible_host={{ external_ip }} internal_ip={{ internal_ip }} ansible_user={{ ansible_user }} ansible_become=true hostname={{ hostname }}
-{{ /standby }}
+[[ #standby ]]
+[[ hostname ]] ansible_host=[[ external_ip ]] internal_ip=[[ internal_ip ]] ansible_user=[[ ansible_user ]] ansible_become=true hostname=[[ hostname ]]
+[[ /standby ]]
 
 [barman]
 barman
 
 [db]
-{{ master.hostname }}
-{{ #standby }}
-{{ hostname }}
-{{ /standby }}
+[[ master.hostname ]]
+[[ #standby ]]
+[[ hostname ]]
+[[ /standby ]]
 
-{{ #standby }}
-[{{ hostname }}]
-{{ hostname }}
-{{ / standby }}
+[[ #standby ]]
+[ [[ hostname ]] ]
+[[ hostname ]]
+[[ /standby ]]
 
 [standby]
-{{ #standby }}
-{{ hostname }}
-{{ / standby }}
+[[ #standby ]]
+[[ hostname ]]
+[[ /standby ]]
 
 [master]
-{{ master.hostname }}
+[[ master.hostname ]]
 
 [all]
 barman
-{{ master.hostname }}
-{{ #standby }}
-{{ hostname }}
-{{ / standby }}
+[[ master.hostname ]]
+[[ #standby ]]
+[[ hostname ]]
+[[ /standby ]]

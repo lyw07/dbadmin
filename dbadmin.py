@@ -20,7 +20,7 @@ def _apply_template(template_file, args, output_file):
     _install_pystache_if_needed()
     try:
         import pystache
-        pystache.defaults.DELIMITERS = (u'[[', u']]')
+        pystache.defaults.DELIMITERS = (u'<[', u']>')
         template = open(template_file)
         output = open(output_file, 'w')
         output.write(pystache.render(template.read(), args))

@@ -26,8 +26,8 @@ resource "google_compute_instance" "barman" {
 }
 
 // create a new master instance
-resource "google_compute_instance" "[[ master.hostname ]]" {
-  name = "[[ master.hostname ]]"
+resource "google_compute_instance" "<[ master.hostname ]>" {
+  name = "<[ master.hostname ]>"
   zone = "${var.zone}"
   machine_type = "${var.machine_type}"
 
@@ -47,9 +47,9 @@ resource "google_compute_instance" "[[ master.hostname ]]" {
 }
 
 // create standby instances
-[[ #standby ]]
-resource "google_compute_instance" "[[ hostname ]]" {
-  name = "[[ hostname ]]"
+<[ #standby ]>
+resource "google_compute_instance" "<[ hostname ]>" {
+  name = "<[ hostname ]>"
   zone = "${var.zone}"
   machine_type = "${var.machine_type}"
   
@@ -67,4 +67,4 @@ resource "google_compute_instance" "[[ hostname ]]" {
     }
   } 
 }
-[[ /standby ]]
+<[ /standby ]>

@@ -39,12 +39,12 @@
     - name: copy terraform files
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/terraform"
-        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/terraform"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
     - name: copy config files
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/config"
-        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/config"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
     - name: copy ansible playbook files
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/playbooks"
-        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/playbooks"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"

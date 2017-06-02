@@ -16,7 +16,7 @@ _bootstrap_commands = [
 ]
 
 _terraform_commands = [
-    './.dbadmin/bin/terraform apply ./.dbadmin/terraform'
+    _home_dir + '/.dbadmin/bin/terraform apply ' + _home_dir + '/.dbadmin/terraform'
 ]
 
 def _install_pystache_if_needed():
@@ -63,7 +63,7 @@ def terraform_handler(args):
     _run_commands(_terraform_commands)
 
     # Generate the hosts file from the output of the terraform step
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+    # _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 
     # TODO(bharadwajs) Also decompose barman_standby.yml to support the number of replicas requested.
 

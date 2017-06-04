@@ -1,20 +1,24 @@
 ---
 - hosts: barman
   tasks:
-    - name: check if host is already registered for wal streaming
-      command: barman status {{ ansible_hostname }}
-      register: host_barman_status
+    - name: check if standby1 is already registered for wal streaming
+      command: barman status standby1
+      register: standby1_barman_status
   
     - name: create replication slot for standby1
       command: barman receive-wal --create-slot {{ hostvars[groups['standby1'][0]]['hostname'] }}
       become: true
       become_method: sudo
       become_user: barman
-      when: '"Server standby1" not in host_barman_status.stdout'
+      when: '"Server standby1" not in standby1_barman_status.stdout'
+
+    - name: check if standby2 is already registered for wal streaming
+      command: barman status standby2
+      register: standby2_barman_status
 
     - name: create replication slot for standby2
       command: barman receive-wal --create-slot {{ hostvars[groups['standby2'][0]]['hostname'] }}
       become: true
       become_method: sudo
       become_user: barman
-      when: '"Server standby2" not in host_barman_status.stdout'
+      when: '"Server standby2" not in standby2_barman_status.stdout'

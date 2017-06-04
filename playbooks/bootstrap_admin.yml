@@ -22,6 +22,11 @@
         name: pystache
       become: yes
       become_method: sudo
+    - name: install psycopg2
+      pip:
+        name: psycopg2
+      become: yes
+      become_method: sudo
     - name: create the bin directory
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"

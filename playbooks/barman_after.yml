@@ -46,7 +46,7 @@
 
     - name: create replication slot
       command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
-      when: "Server master" not in host_barman_status.stdout
+      when: '"Server master" not in host_barman_status.stdout'
 
     - name: run barman cron
       command: barman cron

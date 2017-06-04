@@ -67,6 +67,7 @@
       become: true
       become_method: sudo
       become_user: barman
+      creates: /var/lib/barman/.ssh/id_rsa
 
     - name: fetch the public key of barman to store in the local box
       fetch:

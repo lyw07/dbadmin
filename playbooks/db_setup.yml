@@ -24,6 +24,7 @@
             'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
+        creates: /var/lib/postgresql/.ssh/id_rsa
             
       - name: create config for ssh
         file: 
@@ -132,6 +133,7 @@
             'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
+        creates: /var/lib/postgresql/.ssh/id_rsa
             
       - name: create config for ssh
         file: 

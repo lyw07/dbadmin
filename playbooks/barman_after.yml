@@ -6,7 +6,7 @@
   tasks: 
     - name: copy postgresql public key into authorized_keys
       copy:
-        src: tmp/machine2/var/lib/postgresql/.ssh/id_rsa.pub
+        src: /tmp/machine2/var/lib/postgresql/.ssh/id_rsa.pub
         dest: /var/lib/barman/.ssh/authorized_keys
         mode: 0600
 

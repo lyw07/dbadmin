@@ -52,7 +52,7 @@
     - name: fetch the public key to store in the local box
       fetch:
         src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: tmp
+        dest: /tmp
 
     - name: restart server
       service:
@@ -155,7 +155,7 @@
 
       - name: copy barman public key into authorized_keys
         copy:
-          src: tmp/machine1/var/lib/barman/.ssh/id_rsa.pub
+          src: /tmp/machine1/var/lib/barman/.ssh/id_rsa.pub
           dest: /var/lib/postgresql/.ssh/authorized_keys
           mode: 0600
       become: true
@@ -165,6 +165,6 @@
     - name: fetch the public key to store in the local box
       fetch:
         src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: tmp
+        dest: /tmp
 
 

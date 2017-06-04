@@ -71,7 +71,7 @@
     - name: fetch the public key of barman to store in the local box
       fetch:
         src: /var/lib/barman/.ssh/id_rsa.pub
-        dest: tmp
+        dest: /tmp
 
     - name: create incoming wal directory for master server
       file:

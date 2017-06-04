@@ -6,19 +6,19 @@
   tasks: 
     - name: copy postgresql public key into authorized_keys
       copy:
-        src: /tmp/machine2/var/lib/postgresql/.ssh/id_rsa.pub
+        src: /tmp/master/var/lib/postgresql/.ssh/id_rsa.pub
         dest: /var/lib/barman/.ssh/authorized_keys
         mode: 0600
 
     - name: add standby1's public key into authorized_keys
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', 'tmp/machine3/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+        line: "{{ lookup('file', 'tmp/standby1/var/lib/postgresql/.ssh/id_rsa.pub') }}"
 
     - name: add standby2's public key into authorized_keys
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', 'tmp/machine4/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+        line: "{{ lookup('file', 'tmp/standby2/var/lib/postgresql/.ssh/id_rsa.pub') }}"
 
     - name: create config for ssh
       file: 

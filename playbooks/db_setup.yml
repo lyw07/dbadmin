@@ -15,6 +15,7 @@
       template:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/repmgr.j2"
         dest: /etc/repmgr.conf
+
  
     - block: 
       - name: generate ssh keys
@@ -48,10 +49,6 @@
         postgresql_db:
           name: repmgr
           owner: repmgr
-      #- name: create user repmgr
-      #  command: createuser -s repmgr
-      #- name: create databse repmgr
-      #  command: createdb repmgr -O repmgr
       become: true
       become_method: sudo
       become_user: postgres
@@ -71,11 +68,11 @@
         name: postgresql
         state: reloaded
 
-    - name: register as master
-      command: repmgr -f /etc/repmgr.conf master register
-      become: true
-      become_user: postgres
-      become_method: sudo
+    #- name: register as master
+    #  command: repmgr -f /etc/repmgr.conf master register
+    #  become: true
+    #  become_user: postgres
+    #  become_method: sudo
 
 - hosts: standby1
   tasks:

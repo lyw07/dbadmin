@@ -41,12 +41,12 @@
         line: 'StrictHostKeyChecking no'
     
     - name: check if host is already registered for wal streaming
-      command: barman status {{ ansible_hostname }}
-      register: host_barman_status
+      command: barman status master
+      register: master_barman_status
 
     - name: create replication slot
       command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
-      when: '"Server master" not in host_barman_status.stdout'
+      when: '"Server master" not in master_barman_status.stdout'
 
     - name: run barman cron
       command: barman cron

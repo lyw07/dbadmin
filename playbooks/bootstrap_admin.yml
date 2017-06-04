@@ -17,14 +17,13 @@
         - unzip
       become: yes
       become_method: sudo
-    - name: install pystache
+    - name: install pystache terraform psycopg2
       pip: 
-        name: pystache
-      become: yes
-      become_method: sudo
-    - name: install psycopg2
-      pip:
-        name: psycopg2
+        name: "{{ item }}"
+      with_items:
+        - pexpect
+        - pystache
+        - psycopg2
       become: yes
       become_method: sudo
     - name: create the bin directory

@@ -19,6 +19,10 @@
     - name: install postgresql-9.6
       apt:
         name: postgresql-9.6
+    
+    - name: install postgresql-server-dev-9.6
+      apt:
+        name: postgresql-server-dev-9.6
 
     - name: install repmgr
       apt:

@@ -79,7 +79,7 @@
       become: true
       become_user: postgres
       become_method: sudo
-      when: host_replica_type != 'master'
+      when: '"master" not in host_replica_type.stdout'
 
 - hosts: standby1
   tasks:

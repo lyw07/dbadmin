@@ -1,11 +1,11 @@
 # https://cloud.google.com/compute/docs/instances/connecting-to-instance
 
-barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]> ansible_user=<[ ansible_user ]> ansible_become=true hostname=barman ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]> ansible_become=true hostname=barman ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 
-<[ master.hostname ]> ansible_host=<[ master.external_ip ]> internal_ip=<[ master.internal_ip ]> ansible_user=<[ ansible_user ]> ansible_become=true hostname=<[ master.hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+<[ master.hostname ]> ansible_host=<[ master.external_ip ]> internal_ip=<[ master.internal_ip ]> ansible_become=true hostname=<[ master.hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 
 <[ #standby ]>
-<[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_user=<[ ansible_user ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+<[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ /standby ]>
 
 [barman]

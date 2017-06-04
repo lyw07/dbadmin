@@ -9,13 +9,12 @@
       shell: apt-get update
       become: yes
       become_method: sudo
-    - name: install gcsfuse
+    - name: install gcsfuse unzip
       apt:
         name: "{{ item }}"
       with_items:
         - gcsfuse
         - unzip
-        - git
       become: yes
       become_method: sudo
     - name: install pystache

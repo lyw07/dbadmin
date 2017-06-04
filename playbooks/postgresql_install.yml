@@ -1,7 +1,12 @@
 ---
 - hosts: db
   tasks:
-    - name: add source repository into source list
+    - name: add gcsfuse to apt sources list
+      shell:  echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+    - name: add google cloud apt-key to apt-keys list
+      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+    - name: add postgres repository into source list
       apt_repository:
         repo: deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main
         state: present
@@ -16,26 +21,25 @@
       apt: 
         update_cache: yes
 
-    - name: install postgresql-9.6
+    - name: install prerequisites
       apt:
-        name: postgresql-9.6
-    
-    - name: install postgresql-server-dev-9.6
-      apt:
-        name: postgresql-server-dev-9.6
+        name: "{{ item }}"
+      with_items:
+        - gcsfuse
+        - unzip
+        - postgresql-9.6 
+        - postgresql-server-dev-9.6 
+        - repmgr 
+        - python-pip 
+        - python-dev 
+        - build-essential 
+        - libssl-dev 
+        - libffi-dev
 
-    - name: install repmgr
-      apt:
-        name: repmgr
-
-    - name: install pip
-      apt:
-        name: python-pip
-
-    - name: install pexpect
+    - name: install python modules
       pip:
-        name: pexpect
-    - name: install psycopg2
-      pip:
-        name: psycopg2
+        name: "{{ item }}"
+      with_items:
+        - pexpect
+        - psycopg2
     

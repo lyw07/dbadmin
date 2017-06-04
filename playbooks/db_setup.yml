@@ -68,11 +68,18 @@
         name: postgresql
         state: reloaded
 
-    #- name: register as master
-    #  command: repmgr -f /etc/repmgr.conf master register
-    #  become: true
-    #  become_user: postgres
-    #  become_method: sudo
+    - name: find if host is already registered with repmgr
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ hostvars[groups['master'][0]]['hostname'] }}%') to stdout with csv;"
+      register: host_replica_type
+      ignore_errors: True
+      tags: debug
+    
+    - name: register as master
+      command: repmgr -f /etc/repmgr.conf master register
+      become: true
+      become_user: postgres
+      become_method: sudo
+      when: host_replica_type == ""
 
 - hosts: standby1
   tasks:

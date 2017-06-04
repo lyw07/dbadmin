@@ -3,17 +3,17 @@
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/master/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/master/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
         
     - name: create repmgr.conf
       template:
-        src: config/master/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/repmgr.j2"
         dest: /etc/repmgr.conf
  
     - block: 
@@ -74,34 +74,34 @@
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/standby/standby_one/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/standby/standby_one/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
       template:
-        src: config/standby/standby_one/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/repmgr.j2"
         dest: /etc/repmgr.conf
 
 - hosts: standby2
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/standby/standby_two/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/standby/standby_two/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
       template:
-        src: config/standby/standby_two/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/repmgr.j2"
         dest: /etc/repmgr.conf
 
 

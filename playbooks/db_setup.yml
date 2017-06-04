@@ -163,7 +163,7 @@
 
       - name: copy barman public key into authorized_keys
         copy:
-          src: /tmp/machine1/var/lib/barman/.ssh/id_rsa.pub
+          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
           dest: /var/lib/postgresql/.ssh/authorized_keys
           mode: 0600
       become: true

@@ -60,5 +60,5 @@
   
     - name: create a service account credentials file if needed.
       command: "gcloud iam service-accounts keys create {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json --iam-account=<[ service_account ]>"
-        args:
-          creates: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"
+      args:
+        creates: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"

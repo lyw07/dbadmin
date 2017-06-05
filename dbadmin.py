@@ -130,7 +130,7 @@ def bootstrap_handler(args):
     _run_commands(bootstrap_commands)
 
     # Generate the bootstrap playbook and run it.
-    _apply_template(_home_dir + '/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _home_dir + '/playbooks/bootstrap_admin.yml')
+    _apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _script_root + '/playbooks/bootstrap_admin.yml')
     _run_commands(['ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")

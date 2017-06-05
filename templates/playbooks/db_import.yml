@@ -3,12 +3,15 @@
   tasks:
     - name: create a .gcloud directory readable only by root.
       file:
-        name: {{ ansible_env.HOME }}/.gcloud
+        name: "{{ ansible_env.HOME }}/.gcloud"
         state: directory
 
     - name: copy service account credentials to master
-        src: {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json
-        dest: {{ ansible_env.HOME }}/.gcloud/admin-keys.json
+        src: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"
+        dest: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+    
+    - name: activate service account on the master
+      command: "gcloud auth activate-service-account --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json"
 
     - name: create directory for mountpoint
       file:
@@ -16,6 +19,6 @@
         state: directory
 
     - name: mount the sqldump on the local directory
-      command: "gcsfuse --key-file={{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.gcloud/storage"
+      command: "gcsfuse --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ ansible_env.HOME }}/.gcloud/storage"
     - name: run psql import
-      command: psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ lookup('env', 'HOME') }}/.gcloud/storage/<[ db_import_path ]>'
+      command: "psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ ansible_env.HOME }}/.gcloud/storage/<[ db_import_path ]>'"

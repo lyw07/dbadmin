@@ -6,6 +6,6 @@
         path: "{{ lookup('env', 'HOME') }}/.storage"
         state: directory
     - name: mount the sqldump on the local directory
-      command: "gcsfuse {{ lookup('env', 'HOME') }}/.storage <[ db_import_bucket ]>"
+      command: "gcsfuse <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.storage"
     - name: run psql import
       command: psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ lookup('env', 'HOME') }}/.storage/<[ db_import_path ]>'

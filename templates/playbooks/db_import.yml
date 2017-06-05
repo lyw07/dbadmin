@@ -16,6 +16,6 @@
         state: directory
 
     - name: mount the sqldump on the local directory
-      command: "gcsfuse --key_file={{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.gcloud/storage"
+      command: "gcsfuse --key-file={{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.gcloud/storage"
     - name: run psql import
       command: psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ lookup('env', 'HOME') }}/.gcloud/storage/<[ db_import_path ]>'

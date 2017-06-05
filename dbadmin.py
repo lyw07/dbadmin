@@ -120,20 +120,24 @@ def terraform_handler(args):
 
 
 def bootstrap_handler(args):
-    # Installs dependencies needed for the dbadmin tool to work.
+    # Install and update pip, curl and other dependencies so that _apply_template can be run.
     bootstrap_commands = [
         'sudo apt-get update',
         'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
         'sudo pip install --upgrade pip',
-        'sudo pip install ansible',
-        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml',
+        'sudo pip install ansible pystache'
     ]
     _run_commands(bootstrap_commands)
+
+    # Generate the bootstrap playbook and run it.
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _home_dir + '/.dbadmin/playbooks/bootstrap_admin.yml')
+    _run_commands(['ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Subcommand help')
 
 bootstrap_parser = subparsers.add_parser('bootstrap', help='Installs dependencies needed by the admin tool')
+bootstrap_parser.add_argument('--iam_account', required=True, help='The service account in the form <service-account-id>@<project-id>.iam.gserviceaccount.com.')
 bootstrap_parser.set_defaults(handler=bootstrap_handler)
 
 terraform_parser = subparsers.add_parser('terraform', help='terraform help')

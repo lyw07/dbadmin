@@ -1,11 +1,21 @@
 ---
 - hosts: master
   tasks:
+    - name: create a .gcloud directory readable only by root.
+      file:
+        name: {{ ansible_env.HOME }}/.gcloud
+        state: directory
+
+    - name: copy service account credentials to master
+        src: {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json
+        dest: {{ ansible_env.HOME }}/.gcloud/admin-keys.json
+
     - name: create directory for mountpoint
       file:
-        path: "{{ lookup('env', 'HOME') }}/.storage"
+        path: "{{ ansible_env.HOME }}/.gcloud/storage"
         state: directory
+
     - name: mount the sqldump on the local directory
-      command: "gcsfuse <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.storage"
+      command: "gcsfuse --key_file={{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ lookup('env', 'HOME') }}/.gcloud/storage"
     - name: run psql import
-      command: psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ lookup('env', 'HOME') }}/.storage/<[ db_import_path ]>'
+      command: psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ lookup('env', 'HOME') }}/.gcloud/storage/<[ db_import_path ]>'

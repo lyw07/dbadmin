@@ -43,6 +43,7 @@
     - name: check if host is already registered for wal streaming
       command: barman check master
       register: master_barman_status
+      ignore_errors: true
 
     - name: create replication slot
       command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}

@@ -8,3 +8,6 @@
           'Enter passphrase \(empty for no passphrase\): ': "\n"
           'Enter same passphrase again: ': "\n"
         creates: ~/.ssh/google_compute_engine
+    - name: pause to let ssh credentials propagate
+      pause:
+        seconds: 30

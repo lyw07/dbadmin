@@ -41,12 +41,12 @@
         line: 'StrictHostKeyChecking no'
     
     - name: check if host is already registered for wal streaming
-      command: barman status master
+      command: barman check master
       register: master_barman_status
 
     - name: create replication slot
       command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
-      when: '"Server master" not in master_barman_status.stdout'
+      when: '"receive-wal running: FAILED" not in master_barman_status.stdout'
 
     - name: run barman cron
       command: barman cron

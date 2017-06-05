@@ -4,7 +4,7 @@
     - name: create directory for mountpoint
       file:
         path: "{{ lookup('env', 'HOME') }}/.storage"
-        status: directory
+        state: directory
     - name: mount the sqldump on the local directory
       command: "gcsfuse {{ lookup('env', 'HOME') }}/.storage <[ db_import_bucket ]>"
     - name: run psql import

@@ -47,7 +47,7 @@
 
     - name: create replication slot
       command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
-      when: '"receive-wal running: FAILED" not in master_barman_status.stdout'
+      when: '"receive-wal running: FAILED" in master_barman_status.stdout'
 
     - name: run barman cron
       command: barman cron

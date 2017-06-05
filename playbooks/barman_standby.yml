@@ -11,7 +11,7 @@
       become: true
       become_method: sudo
       become_user: barman
-      when: '"receive-wal running: FAILED" not in standby1_barman_status.stdout'
+      when: '"receive-wal running: FAILED" in standby1_barman_status.stdout'
 
     - name: check if standby2 is already registered for wal streaming
       command: barman check standby2
@@ -23,4 +23,4 @@
       become: true
       become_method: sudo
       become_user: barman
-      when: '"receive-wal running: FAILED" not in standby2_barman_status.stdout'
+      when: '"receive-wal running: FAILED" in standby2_barman_status.stdout'

@@ -32,7 +32,7 @@
     - name: find if host is already registered with repmgr
       command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
       register: host_replica_type
-      ignore_errors: True
+      ignore_errors: true
       tags: debug
 
     - block:

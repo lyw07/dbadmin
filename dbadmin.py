@@ -100,9 +100,24 @@ def terraform_handler(args):
     ]
     _run_commands(ansible_commands)
 
-    # Fetch the list of running instances using gcloud and their ip addresses. 
-    # Apply the ip address information to generate the hosts file used by ansible.
-    # 
+    # Run the sql import on the master if the corresponding flags have been set.
+    import_commands = []
+    if args.database_name and args.database_user:
+        db_create_args = {
+            'dbname': args.database_name,
+            'dbuser': args.database_user,
+        }
+        _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_create.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_create.yml')
+        import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_create.yml')
+        if args.sqldump_location and args.sqldump_location.find(':') > 0:
+            db_create_args.update({
+                'db_import_bucket': args.sqldump_location.split(':')[0],
+                'db_import_path': args.sqldump_location.split(':')[1]
+            })
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
+            import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
+    _run_commands(import_commands)
+
 
 def bootstrap_handler(args):
     # Installs dependencies needed for the dbadmin tool to work.
@@ -128,9 +143,12 @@ terraform_parser.add_argument('--region', required=True, help='The GCE region.')
 terraform_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
 terraform_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
-terraform_parser.add_argument('--master_hostname', default='master', help='Host name for the master')
-terraform_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances')
-terraform_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances')
+terraform_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+terraform_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
+terraform_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
+terraform_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
+terraform_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')
+terraform_parser.add_argument('--sqldump_location', default=None, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 terraform_parser.set_defaults(handler=terraform_handler)
 
 args = parser.parse_args()

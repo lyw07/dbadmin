@@ -154,6 +154,18 @@ terraform_subparsers = terraform_parser.add_subparsers(help='Terraform subcomman
 
 terraform_all_parser = terraform_subparsers.add_parser('all', help='Terraform everything')
 terraform_all_parser.set_defaults(handler=terraform_all_handler)
+terraform_all_parser.add_argument('--project_id', required=True, help='The GCE project id.')
+terraform_all_parser.add_argument('--zone', required=True, help='The GCE zone.')
+terraform_all_parser.add_argument('--region', required=True, help='The GCE region.')
+terraform_all_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
+terraform_all_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
+terraform_all_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
+terraform_all_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+terraform_all_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
+terraform_all_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
+terraform_all_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
+terraform_all_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')
+terraform_all_parser.add_argument('--sqldump_location', default=None, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
 terraform_instances_parser = terraform_subparsers.add_parser('instances', help='Only create instances. No configuration is done.')
 terraform_instances_parser.set_defaults(handler=terraform_instances_handler)
@@ -163,9 +175,15 @@ terraform_instances_parser.add_argument('--region', required=True, help='The GCE
 terraform_instances_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
 terraform_instances_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_instances_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
+terraform_instances_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+terraform_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
+terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 
 terraform_configure_parser = terraform_subparsers.add_parser('configure', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 terraform_configure_parser.set_defaults(handler=terraform_configure_handler)
+terraform_configure_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+terraform_configure_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
+terraform_configure_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 
 terraform_initialize_parser = terraform_subparsers.add_parser('initialize', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
 terraform_initialize_parser.set_defaults(handler=terraform_initialize_handler)
@@ -175,9 +193,6 @@ terraform_initialize_parser.add_argument('--sqldump_location', default=None, hel
 
 terraform_add_standby_parser = terraform_subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
 terraform_add_standby_parser.set_defaults(handler=terraform_add_standby_handler)
-terraform_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
-terraform_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
-terraform_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 
 args = parser.parse_args()
 args.handler(args)

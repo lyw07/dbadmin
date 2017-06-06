@@ -162,7 +162,7 @@ configure_instances_parser.add_argument('--master_hostname', default='master', h
 configure_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 configure_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 
-initialize_instances_parser = terraform_subparsers.add_parser('initialize-instances', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
+initialize_instances_parser = subparsers.add_parser('initialize-instances', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
 initialize_instances_parser.set_defaults(handler=initialize_instances_handler)
 initialize_instances_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
 initialize_instances_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')

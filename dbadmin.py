@@ -62,7 +62,7 @@ def terraform_instances_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply --state-out=' + _home_dir + '/.dbadmin ' + _home_dir + '/.dbadmin/terraform'))
+    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform'))
 
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.

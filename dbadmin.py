@@ -39,7 +39,12 @@ def _run_commands(commands):
             return False
     return True
 
-def terraform_handler(args):
+def terraform_all_handler(args):
+    terraform_instances_hander(args)
+    terraform_configure_handler(args)
+    terraform_initialize_handler(args)
+
+def terraform_instances_handler(args):
     # Generate the terraform variables configuration file and run terraform apply
     tf_vars = {
         'project_id': args.project_id,
@@ -62,8 +67,9 @@ def terraform_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply ' + _home_dir + '/.dbadmin/terraform'))
+    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply --state-out=' + _home_dir + '/.dbadmin ' + _home_dir + '/.dbadmin/terraform'))
 
+def terraform_configure_handler(args):
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
@@ -100,6 +106,7 @@ def terraform_handler(args):
     ]
     _run_commands(ansible_commands)
 
+def terraform_initialize_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
     import_commands = []
     if args.database_name and args.database_user:
@@ -118,6 +125,8 @@ def terraform_handler(args):
             import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 
+def terraform_add_standby_handler(args):
+    pass
 
 def bootstrap_handler(args):
     # Install and update pip, curl and other dependencies so that _apply_template can be run.
@@ -134,26 +143,41 @@ def bootstrap_handler(args):
     _run_commands(['ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
-subparsers = parser.add_subparsers(help='Subcommand help')
+subparsers = parser.add_subparsers(help='Supported commands')
 
 bootstrap_parser = subparsers.add_parser('bootstrap', help='Installs dependencies needed by the admin tool')
 bootstrap_parser.add_argument('--iam_account', required=True, help='The service account in the form <service-account-id>@<project-id>.iam.gserviceaccount.com.')
 bootstrap_parser.set_defaults(handler=bootstrap_handler)
 
 terraform_parser = subparsers.add_parser('terraform', help='terraform help')
-terraform_parser.add_argument('--project_id', required=True, help='The GCE project id.')
-terraform_parser.add_argument('--zone', required=True, help='The GCE zone.')
-terraform_parser.add_argument('--region', required=True, help='The GCE region.')
-terraform_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
-terraform_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
-terraform_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
+terraform_subparsers = terraform_parser.add_subparsers(help='Terraform subcommands')
+
+terraform_all_parser = terraform_subparsers.add_parser('all', help='Terraform everything')
+terraform_all_parser.set_defaults(handler=terraform_all_handler)
+
+terraform_instances_parser = terraform_subparsers.add_parser('instances', help='Only create instances. No configuration is done.')
+terraform_instances_parser.set_defaults(handler=terraform_instances_handler)
+terraform_instances_parser.add_argument('--project_id', required=True, help='The GCE project id.')
+terraform_instances_parser.add_argument('--zone', required=True, help='The GCE zone.')
+terraform_instances_parser.add_argument('--region', required=True, help='The GCE region.')
+terraform_instances_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
+terraform_instances_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
+terraform_instances_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
+
+terraform_configure_parser = terraform_subparsers.add_parser('configure', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
+terraform_configure_parser.set_defaults(handler=terraform_configure_handler)
+
+terraform_initialize_parser = terraform_subparsers.add_parser('initialize', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
+terraform_initialize_parser.set_defaults(handler=terraform_initialize_handler)
+terraform_initialize_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
+terraform_initialize_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')
+terraform_initialize_parser.add_argument('--sqldump_location', default=None, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
+
+terraform_add_standby_parser = terraform_subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
+terraform_add_standby_parser.set_defaults(handler=terraform_add_standby_handler)
 terraform_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
 terraform_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 terraform_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
-terraform_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
-terraform_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')
-terraform_parser.add_argument('--sqldump_location', default=None, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
-terraform_parser.set_defaults(handler=terraform_handler)
 
 args = parser.parse_args()
 args.handler(args)

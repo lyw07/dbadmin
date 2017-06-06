@@ -22,4 +22,4 @@
     - name: mount the sqldump on the local directory
       command: "gcsfuse --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json <[ db_import_bucket ]> {{ ansible_env.HOME }}/.gcloud/storage"
     - name: run psql import
-      command: "psql -U <[ dbuser ]> -d <[ dbname ]> -c '\i {{ ansible_env.HOME }}/.gcloud/storage/<[ db_import_path ]>'"
+      command: "psql -U <[ dbuser ]> -d <[ dbname ]> -c '\\i {{ ansible_env.HOME }}/.gcloud/storage/<[ db_import_path ]>'"

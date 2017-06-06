@@ -74,8 +74,8 @@ def configure_instances_handler(args):
         },
         'master': {
             'hostname': args.master_hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + args.master_hostname + '_internal_ip')).rstrip(),
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_internal_ip')).rstrip(),
         },
         'standby': [
         ]}
@@ -83,8 +83,8 @@ def configure_instances_handler(args):
         hostname = args.standby_hostname_prefix + str(i+1)
         hosts_vars['standby'].append({
             'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output ' + hostname + '_internal_ip')).rstrip(),
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
         })
     _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 

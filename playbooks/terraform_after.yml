@@ -1,0 +1,13 @@
+---
+- hosts: gateway
+  tasks:
+    - name: run gcloud compute config-ssh to set up ssh keys
+      expect:
+        command: gcloud compute config-ssh
+        responses:
+          'Enter passphrase \(empty for no passphrase\): ': "\n"
+          'Enter same passphrase again: ': "\n"
+        creates: ~/.ssh/google_compute_engine
+    - name: pause to let ssh credentials propagate
+      pause:
+        seconds: 30

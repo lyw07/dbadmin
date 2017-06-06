@@ -1,0 +1,64 @@
+---
+- hosts: gateway
+  tasks:
+    - name: add gcsfuse to apt sources list
+      shell:  echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+    - name: add google cloud apt-key to apt-keys list
+      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    - name: update apt cache
+      shell: apt-get update
+      become: yes
+      become_method: sudo
+    - name: install gcsfuse unzip
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - gcsfuse
+        - unzip
+      become: yes
+      become_method: sudo
+    - name: install pystache terraform psycopg2
+      pip: 
+        name: "{{ item }}"
+      with_items:
+        - pexpect
+        - pystache
+        - psycopg2
+      become: yes
+      become_method: sudo
+    - name: create the bin directory
+      file:
+        path: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
+        state: directory
+    - name: download and unarchive terraform
+      unarchive: 
+        src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
+        remote_src: true
+        creates: "{{ lookup('env', 'HOME') }}/.dbadmin/bin/terraform"
+    - name: clone the backupdb git project (gce branch)
+      git:
+        repo: https://github.com/bsubrama/backupdb.git
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/repo"
+        version: gce
+    - name: copy terraform files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/terraform"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
+    - name: copy config files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/config"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
+    - name: copy ansible playbook files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/playbooks"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
+    - name: copy ip.j2
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/ip.j2"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
+  
+    - name: create a service account credentials file if needed.
+      command: "gcloud iam service-accounts keys create {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json --iam-account=<[ service_account ]>"
+      args:
+        creates: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"

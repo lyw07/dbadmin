@@ -28,10 +28,17 @@
       service:
         name: postgresql
         state: reloaded
+    
+    - name: find if host is already registered with repmgr
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      register: host_replica_type
+      ignore_errors: true
+      tags: debug
 
     - block:
       - name: register as standby
         command: repmgr -f /etc/repmgr.conf standby register
+        when:  '"standby" not in host_replica_type.stdout'
 
       - name: start repmgrd
         shell: >

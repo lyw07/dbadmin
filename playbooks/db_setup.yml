@@ -3,18 +3,19 @@
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/master/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/master/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
         
     - name: create repmgr.conf
       template:
-        src: config/master/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/repmgr.j2"
         dest: /etc/repmgr.conf
+
  
     - block: 
       - name: generate ssh keys
@@ -24,6 +25,7 @@
             'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
+          creates: /var/lib/postgresql/.ssh/id_rsa
             
       - name: create config for ssh
         file: 
@@ -39,12 +41,14 @@
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'StrictHostKeyChecking no'
-
       - name: create user repmgr
-        command: createuser -s repmgr
-
-      - name: create databse repmgr
-        command: createdb repmgr -O repmgr
+        postgresql_user:
+          name: repmgr
+          role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
+      - name: create database repmgr
+        postgresql_db:
+          name: repmgr
+          owner: repmgr
       become: true
       become_method: sudo
       become_user: postgres
@@ -52,7 +56,7 @@
     - name: fetch the public key to store in the local box
       fetch:
         src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: tmp
+        dest: /tmp
 
     - name: restart server
       service:
@@ -64,44 +68,51 @@
         name: postgresql
         state: reloaded
 
+    - name: find if host is already registered with repmgr
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      register: host_replica_type
+      ignore_errors: True
+      tags: debug
+    
     - name: register as master
       command: repmgr -f /etc/repmgr.conf master register
       become: true
       become_user: postgres
       become_method: sudo
+      when: '"master" not in host_replica_type.stdout'
 
 - hosts: standby1
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/standby/standby_one/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/standby/standby_one/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
       template:
-        src: config/standby/standby_one/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/repmgr.j2"
         dest: /etc/repmgr.conf
 
 - hosts: standby2
   tasks:
     - name: copy postgresql configuration file into the data folder
       template: 
-        src: config/standby/standby_two/postgresql.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/postgresql.j2"
         dest: /etc/postgresql/9.6/main/postgresql.conf
 
     - name: copy pg_hba file into the data folder
       template: 
-        src: config/standby/standby_two/pg_hba.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/pg_hba.j2"
         dest: /etc/postgresql/9.6/main/pg_hba.conf
 
     - name: create repmgr.conf
       template:
-        src: config/standby/standby_two/repmgr.j2
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/repmgr.j2"
         dest: /etc/repmgr.conf
 
 
@@ -132,6 +143,7 @@
             'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
+          creates: /var/lib/postgresql/.ssh/id_rsa
             
       - name: create config for ssh
         file: 
@@ -155,7 +167,7 @@
 
       - name: copy barman public key into authorized_keys
         copy:
-          src: tmp/machine1/var/lib/barman/.ssh/id_rsa.pub
+          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
           dest: /var/lib/postgresql/.ssh/authorized_keys
           mode: 0600
       become: true
@@ -165,6 +177,6 @@
     - name: fetch the public key to store in the local box
       fetch:
         src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: tmp
+        dest: /tmp
 
 

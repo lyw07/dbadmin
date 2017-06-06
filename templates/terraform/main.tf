@@ -26,8 +26,8 @@ resource "google_compute_instance" "barman" {
 }
 
 // create a new master instance
-resource "google_compute_instance" "master" {
-  name = "master"
+resource "google_compute_instance" "<[ master.hostname ]>" {
+  name = "<[ master.hostname ]>"
   zone = "${var.zone}"
   machine_type = "${var.machine_type}"
 
@@ -46,30 +46,10 @@ resource "google_compute_instance" "master" {
   } 
 }
 
-// create a new standby instance
-resource "google_compute_instance" "standby1" {
-  name = "standby1"
-  zone = "${var.zone}"
-  machine_type = "${var.machine_type}"
-  
-  disk {
-    image = "debian-8-jessie-v20170426"
-    type = "${var.disk_type}"
-    size = "${var.disk_size}"
-  }
-
-  network_interface {
-    network = "default"
-
-    access_config {
-      nat_ip =""
-    }
-  } 
-}
-
-// create a second standby instance
-resource "google_compute_instance" "standby2" {
-  name = "standby2"
+// create standby instances
+<[ #standby ]>
+resource "google_compute_instance" "<[ hostname ]>" {
+  name = "<[ hostname ]>"
   zone = "${var.zone}"
   machine_type = "${var.machine_type}"
   
@@ -87,3 +67,4 @@ resource "google_compute_instance" "standby2" {
     }
   } 
 }
+<[ /standby ]>

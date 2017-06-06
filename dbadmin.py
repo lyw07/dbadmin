@@ -164,9 +164,9 @@ configure_instances_parser.add_argument('--num_standby', default=2, type=int, he
 
 initialize_instances_parser = subparsers.add_parser('initialize-instances', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
 initialize_instances_parser.set_defaults(handler=initialize_instances_handler)
-initialize_instances_parser.add_argument('--database_name', default=None, help='Name of the database to be created.')
-initialize_instances_parser.add_argument('--database_user', default=None, help='Name of the user to be created to access postgres.')
-initialize_instances_parser.add_argument('--sqldump_location', default=None, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
+initialize_instances_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
+initialize_instances_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
+initialize_instances_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
 add_standby_parser = subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
 add_standby_parser.set_defaults(handler=add_standby_handler)

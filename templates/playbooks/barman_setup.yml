@@ -54,7 +54,7 @@
 <[ #replicas ]>
     - name: copy database server <[ hostname ]>'s configuration into /etc/barman.d
       copy:
-        src: "{{ lookup('env', 'HOME' }}/.dbadmin/config/barman/<[ hostname ]>.conf"
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ hostname ]>.conf"
         dest: /etc/barman.d/<[ hostname]>.conf
 <[ /replicas ]>
 

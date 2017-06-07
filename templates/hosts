@@ -16,6 +16,11 @@ barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]
 [barman]
 barman
 
+[replicas]
+<[ #replicas ]>
+<[ hostname ]>
+<[ /replicas ]>
+
 [db]
 <[ master.hostname ]>
 <[ #standby ]>

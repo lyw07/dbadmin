@@ -54,16 +54,18 @@ def terraform_instances_handler(args):
         'standby': [],
         'replicas': []
     }
-    for i in xrange(args.num_standby):
-        hostname = args.standby_hostname_prefix + str(i+1)
-        tf_vars['standby'].append({
-            'hostname': hostname
-        })
-    for i in xrange(args.num_replicas):
-        hostname = args.replica_hostname_prefix + str(i+1)
-        tf_vars['replicas'].append({
-            'hostname': hostname,
-        })
+    if args.version == 'stable':
+        for i in xrange(args.num_standby):
+            hostname = args.standby_hostname_prefix + str(i+1)
+            tf_vars['standby'].append({
+                'hostname': hostname
+            })
+    if args.version == 'alpha':
+        for i in xrange(args.num_replicas):
+            hostname = args.replica_hostname_prefix + str(i+1)
+            tf_vars['replicas'].append({
+                'hostname': hostname,
+            })
     # Generate terraform files from templates and run terraform.
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
@@ -91,42 +93,45 @@ def configure_instances_handler(args):
         ],
         'replicas': [
         ]}
-    for i in xrange(args.num_standby):
-        hostname = args.standby_hostname_prefix + str(i+1)
-        hosts_vars['standby'].append({
-            'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-        })
+    if args.version == 'stable':
+        for i in xrange(args.num_standby):
+            hostname = args.standby_hostname_prefix + str(i+1)
+            hosts_vars['standby'].append({
+                'hostname': hostname,
+                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            })
 
-    for i in xrange(args.num_replicas):
-        hostname = args.replica_hostname_prefix + str(i+1)
-        vars = {
-            'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-            'index': str(i)
-        }
-        hosts_vars['replicas'].append(vars)
-        if i == 0:
-            hosts_vars['master'] = vars
-        else:
-            hosts_vars['standby'].append(vars)
+    if args.version == 'alpha':
+        for i in xrange(args.num_replicas):
+            hostname = args.replica_hostname_prefix + str(i+1)
+            vars = {
+                'hostname': hostname,
+                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+                'index': str(i)
+            }
+            hosts_vars['replicas'].append(vars)
+            if i == 0:
+                hosts_vars['master'] = vars
+            else:
+                hosts_vars['standby'].append(vars)
     _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 
     # Generate configuration files needed for configuring the instances.
-    for replica in hosts_vars['replicas']:
-        vars = {
-            'host': replica,
-            'barman': hosts_vars['barman'],
-            'app_server': {
-                'internal_ip': args.appserver_internalip
+    if args.version == 'alpha':
+        for replica in hosts_vars['replicas']:
+            vars = {
+                'host': replica,
+                'barman': hosts_vars['barman'],
+                'app_server': {
+                    'internal_ip': args.appserver_internalip
+                }
             }
-        }
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/pg_hba.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/pg_hba.conf')
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/postgresql.conf')
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/repmgr.conf')
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/pg_hba.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/pg_hba.conf')
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/postgresql.conf')
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/repmgr.conf')
 
     # Generate the necessary playbooks for configuring the replicas.
     _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')
@@ -218,6 +223,8 @@ initialize_master_parser.add_argument('--sqldump_location', required=True, help=
 
 add_standby_parser = subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
 add_standby_parser.set_defaults(handler=add_standby_handler)
+
+parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 
 args = parser.parse_args()
 args.handler(args)

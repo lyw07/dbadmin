@@ -68,7 +68,11 @@ def terraform_instances_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    subprocess.check_call(_as_array(_home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform'))
+    terraform_commands = [
+        _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
+        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
+    ]
+    _run_commands(terraform_commands)
 
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.
@@ -127,7 +131,6 @@ def configure_instances_handler(args):
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [
-        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
         'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/get_ip.yml',
         'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_setup.yml',
         'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/postgresql_install.yml',

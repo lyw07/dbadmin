@@ -2,11 +2,16 @@
 
 barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]> ansible_become=true hostname=barman ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 
+
 <[ master.hostname ]> ansible_host=<[ master.external_ip ]> internal_ip=<[ master.internal_ip ]> ansible_become=true hostname=<[ master.hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 
 <[ #standby ]>
 <[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ /standby ]>
+
+<[ #replicas ]>
+<[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
+<[ /replicas ]>
 
 [barman]
 barman
@@ -16,11 +21,19 @@ barman
 <[ #standby ]>
 <[ hostname ]>
 <[ /standby ]>
+<[ #replicas ]>
+<[ hostname ]>
+<[ /replicas ]>
 
 <[ #standby ]>
 [<[ hostname ]>]
 <[ hostname ]>
 <[ /standby ]>
+
+<[ #replicas ]>
+[<[ hostname ]>]
+<[ hostname ]>
+<[ /replicas ]>
 
 [standby]
 <[ #standby ]>
@@ -36,3 +49,6 @@ barman
 <[ #standby ]>
 <[ hostname ]>
 <[ /standby ]>
+<[ #replicas ]>
+<[ hostname ]>
+<[ /replicas ]>

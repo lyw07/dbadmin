@@ -68,3 +68,26 @@ resource "google_compute_instance" "<[ hostname ]>" {
   } 
 }
 <[ /standby ]>
+
+<[ #replicas ]>
+// create <[ hostname ]> instance
+resource "google_compute_instance" "<[ hostname ]>" {
+  name = "<[ hostname ]>"
+  zone = "${var.zone}"
+  machine_type = "${var.machine_type}"
+  
+  disk {
+    image = "debian-8-jessie-v20170426"
+    type = "${var.disk_type}"
+    size = "${var.disk_size}"
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      nat_ip =""
+    }
+  } 
+}
+<[ /replicas ]>

@@ -25,7 +25,7 @@ output "<[ hostname ]>_external_ip" {
 }
 <[ /standby ]>
 
-<[ #version_stable ]>
+<[ /version_stable ]>
 <[ #version_alpha ]>
 <[ #replicas ]>
 output "<[ hostname ]>_internal_ip" {

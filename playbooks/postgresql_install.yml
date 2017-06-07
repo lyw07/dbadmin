@@ -35,6 +35,7 @@
         - build-essential 
         - libssl-dev 
         - libffi-dev
+        - barman-cli
 
     - name: install python modules
       pip:

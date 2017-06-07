@@ -1,4 +1,86 @@
 ---
+- hosts: replicas
+  tasks:
+    - block: 
+      - name: generate ssh keys
+        expect: 
+          command: ssh-keygen -t rsa
+          responses:
+            'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
+            'Enter passphrase \(empty for no passphrase\):': "\n"
+            'Enter same passphrase again:': "\n"
+          creates: /var/lib/postgresql/.ssh/id_rsa
+      - name: create config for ssh
+        file: 
+          path: /var/lib/postgresql/.ssh/config
+          state: touch
+      - name: add barman server's ip address to config
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: "Host <[ barman.hostname ]>"
+      - name: add user barman to config
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: 'User barman'
+      - name: ignore ssh host key checking
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: 'StrictHostKeyChecking no'
+      - name: fetch the public key to store in the local box
+        fetch:
+          src: /var/lib/postgresql/.ssh/id_rsa.pub
+          dest: /tmp
+      - name: copy barman public key into authorized_keys
+        copy:
+          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
+          dest: /var/lib/postgresql/.ssh/authorized_keys
+      become: true
+      become_method: sudo
+      become_user: postgres
+
+    - name: add postgres as a sudoer
+      lineinfile:
+        dest: /etc/sudoers.d/postgres
+        line: >
+          postgres ALL=(root) NOPASSWD: /bin/systemctl start postgresql, 
+          /bin/systemctl stop postgresql, 
+          /bin/systemctl restart postgresql, 
+          /bin/systemctl reload postgresql, 
+          /usr/bin/pg_ctlcluster 9.6 main promote
+        create: yes
+        state: present
+        mode: 0600
+
+    - name: copy postgresql.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/postgresql.conf"
+        dest: /etc/postgresql/9.6/main/postgresql.conf
+
+    - name: copy pg_hba.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/pb_hba.conf"
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
+
+    - name: copy repmgr.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/repmgr.conf"
+        dest: /etc/repmgr.conf
+    
+    - name: restart server
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: reload configuration files
+      service:
+        name: postgresql
+        state: reloaded
+    
+    - name: create user repmgr
+      postgresql_user:
+        name: repmgr
+        role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
+
 - hosts: master
   tasks:
     - name: copy postgresql configuration file into the data folder
@@ -40,14 +122,6 @@
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: 'StrictHostKeyChecking no'
-      - name: create user repmgr
-        postgresql_user:
-          name: repmgr
-          role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
-      - name: create database repmgr
-        postgresql_db:
-          name: repmgr
-          owner: repmgr
       become: true
       become_method: sudo
       become_user: postgres
@@ -66,6 +140,16 @@
       service:
         name: postgresql
         state: reloaded
+    
+    - name: create user repmgr
+      postgresql_user:
+        name: repmgr
+        role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
+
+    - name: create database repmgr
+      postgresql_db:
+        name: repmgr
+        owner: repmgr
 
     - name: find if host is already registered with repmgr
       command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"

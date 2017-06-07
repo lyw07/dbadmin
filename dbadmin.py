@@ -98,6 +98,7 @@ def configure_instances_handler(args):
             'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
             'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
         })
+
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
         vars = {
@@ -127,7 +128,9 @@ def configure_instances_handler(args):
         _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/postgresql.conf')
         _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, _home_dir + '/.dbadmin/config/' + replica['hostname'] + '/repmgr.conf')
 
-    # TODO(bharadwajs) Generate the necessary playbooks for configuring the replicas.
+    # Generate the necessary playbooks for configuring the replicas.
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/db_setup.yml')
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [

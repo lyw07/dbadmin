@@ -131,7 +131,8 @@ def configure_instances_handler(args):
                 'barman': hosts_vars['barman'],
                 'app_server': {
                     'internal_ip': args.appserver_internalip
-                }
+                },
+                'master': hosts_vars['master'],
             }
             host_config_dir = _home_dir + '/.dbadmin/config/' + replica['hostname']
             if not os.path.exists(host_config_dir):

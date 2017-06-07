@@ -193,7 +193,7 @@ terraform_instances_parser.add_argument('--master_hostname', default='master', h
 terraform_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
-terraform_instances_parser.add_argument('--num_replica', default=0, type=int, help='Number of replicas.')
+terraform_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
 
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 configure_instances_parser.set_defaults(handler=configure_instances_handler)

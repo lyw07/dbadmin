@@ -133,7 +133,7 @@ def configure_instances_handler(args):
                     'internal_ip': args.appserver_internalip
                 }
             }
-            host_config_dir = _home_dir + '.dbadmin/config/' + replica['hostname']
+            host_config_dir = _home_dir + '/.dbadmin/config/' + replica['hostname']
             if not os.path.exists(host_config_dir):
                 os.makedirs(host_config_dir)
             _apply_template(_home_dir + '/.dbadmin/repo/templates/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')

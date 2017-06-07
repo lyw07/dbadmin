@@ -90,7 +90,7 @@
         owner: repmgr
 
     - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_contentcuration.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_<[ master.hostname ]>.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
       register: host_replica_type
       ignore_errors: True
       tags: debug
@@ -174,7 +174,7 @@
         owner: repmgr
 
     - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_contentcuration.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
       register: host_replica_type
       ignore_errors: True
       tags: debug

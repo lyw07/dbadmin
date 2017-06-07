@@ -25,6 +25,7 @@ resource "google_compute_instance" "barman" {
   }
 }
 
+<[ #version_stable ]>
 // create a new master instance
 resource "google_compute_instance" "<[ master.hostname ]>" {
   name = "<[ master.hostname ]>"
@@ -68,7 +69,9 @@ resource "google_compute_instance" "<[ hostname ]>" {
   } 
 }
 <[ /standby ]>
+<[ /version_stable ]>
 
+<[ #version_alpha ]>
 <[ #replicas ]>
 // create <[ hostname ]> instance
 resource "google_compute_instance" "<[ hostname ]>" {
@@ -91,3 +94,4 @@ resource "google_compute_instance" "<[ hostname ]>" {
   } 
 }
 <[ /replicas ]>
+<[ /version_alpha ]>

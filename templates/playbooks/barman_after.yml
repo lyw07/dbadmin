@@ -63,6 +63,11 @@
         dest: /var/lib/barman/.ssh/config
         line: 'StrictHostKeyChecking no'
     
+
+    - name: pause to let the replicas register themselves with barman
+      pause:
+        seconds: 10
+
     - name: check if host is already registered for wal streaming
       command: barman check <[ master.hostname ]>
       register: master_barman_status

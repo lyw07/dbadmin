@@ -201,7 +201,7 @@ configure_instances_parser.add_argument('--master_hostname', default='master', h
 configure_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 configure_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 configure_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
-configure_instances_parser.add_argument('--num_replicas', default=3, type=int, help='Number of replicas.')
+configure_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
 configure_instances_parser.add_argument('--appserver_internalip', required=True, help='Internal IP address of the app server that will talk to the replicas.')
 
 initialize_master_parser = subparsers.add_parser('initialize-master', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')

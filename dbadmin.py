@@ -54,12 +54,11 @@ def terraform_instances_handler(args):
         'standby': [],
         'replicas': []
     }
-    if args.version == 'stable':
-        for i in xrange(args.num_standby):
-            hostname = args.standby_hostname_prefix + str(i+1)
-            tf_vars['standby'].append({
-                'hostname': hostname
-            })
+    for i in xrange(args.num_standby):
+        hostname = args.standby_hostname_prefix + str(i+1)
+        tf_vars['standby'].append({
+            'hostname': hostname
+        })
     if args.version == 'alpha':
         for i in xrange(args.num_replicas):
             hostname = args.replica_hostname_prefix + str(i+1)
@@ -93,14 +92,13 @@ def configure_instances_handler(args):
         ],
         'replicas': [
         ]}
-    if args.version == 'stable':
-        for i in xrange(args.num_standby):
-            hostname = args.standby_hostname_prefix + str(i+1)
-            hosts_vars['standby'].append({
-                'hostname': hostname,
-                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-            })
+    for i in xrange(args.num_standby):
+        hostname = args.standby_hostname_prefix + str(i+1)
+        hosts_vars['standby'].append({
+            'hostname': hostname,
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+        })
 
     if args.version == 'alpha':
         for i in xrange(args.num_replicas):

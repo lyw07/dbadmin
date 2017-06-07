@@ -113,7 +113,7 @@ def configure_instances_handler(args):
                 'hostname': hostname,
                 'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
                 'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-                'index': str(i)
+                'index': str(i+1)
             }
             hosts_vars['replicas'].append(vars)
             if i == 0:

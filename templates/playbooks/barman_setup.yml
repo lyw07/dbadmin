@@ -36,6 +36,7 @@
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/barman.conf"
         dest: /etc/barman.conf
 
+<[ #version_stable ]>
     - name: Copy database server pg's configuration into /etc/barman.d
       template: 
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/pg.j2"
@@ -50,13 +51,16 @@
       template: 
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/standby2.j2"
         dest: /etc/barman.d/standby2.conf
+<[ /version_stable ]>
 
+<[ #version_alpha ]>
 <[ #replicas ]>
     - name: copy database server <[ hostname ]>'s configuration into /etc/barman.d
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ hostname ]>.conf"
         dest: /etc/barman.d/<[ hostname]>.conf
 <[ /replicas ]>
+<[ /version_alpha ]>
 
     - name: generate ssh keys
       expect: 
@@ -75,6 +79,7 @@
         src: /var/lib/barman/.ssh/id_rsa.pub
         dest: /tmp
 
+<[ #version_stable ]>
     - name: create incoming wal directory for master server
       file:
         path: /var/lib/barman/{{ hostvars[groups['master'][0]]['hostname'] }}/incoming
@@ -98,6 +103,8 @@
         owner: barman
         group: barman
         mode: 0755
+<[ /version_stable ]>
+<[ #version_alpha ]>
 <[ #replicas ]>
     - name: create incoming wal directory for <[ hostname ]> server
       file:
@@ -107,3 +114,4 @@
         group: barman
         mode: 0755
 <[ /replicas ]>
+<[ /version_alpha ]>

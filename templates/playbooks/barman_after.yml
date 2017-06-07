@@ -10,6 +10,7 @@
         dest: /var/lib/barman/.ssh/authorized_keys
         mode: 0600
 
+<[ #version_stable ]>
     - name: add standby1's public key into authorized_keys
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
@@ -19,6 +20,9 @@
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
         line: "{{ lookup('file', '/tmp/standby2/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+<[ /version_stable ]>
+
+<[ #version_alpha ]>
 <[ #replicas ]>
 
     - name: add <[ hostname ]>'s public key into authorized_keys
@@ -26,12 +30,14 @@
         dest: /var/lib/barman/.ssh/authorized_keys
         line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
 <[ /replicas ]>
+<[ /version_alpha ]>
 
     - name: create config for ssh
       file: 
         path: /var/lib/barman/.ssh/config
         state: touch
 
+<[ #version_stable ]>
     - name: add standby1's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
@@ -41,6 +47,8 @@
       lineinfile:
         dest: /var/lib/barman/.ssh/config
         line: "Host {{ hostvars[groups['standby2'][0]]['hostname'] }}"
+<[ /version_stable ]>
+<[ #version_alpha ]>
 <[ #replicas ]>
 
     - name: add <[ hostname ]>'s ip address to config
@@ -48,6 +56,7 @@
         dest: /var/lib/barman/.ssh/config
         line: "Host <[ hostname ]>"
 <[ /replicas ]>
+<[ /version_alpha ]>
 
     - name: ignore ssh host key checking
       lineinfile:

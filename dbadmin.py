@@ -83,24 +83,29 @@ def configure_instances_handler(args):
             'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate barman_external_ip')).rstrip(),
             'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate  barman_internal_ip')).rstrip(),
         },
-        'master': {
-            'hostname': args.master_hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_internal_ip')).rstrip(),
-        },
+        'version_alpha': False,
+        'version_stable': False,
         'standby': [
         ],
         'replicas': [
         ]}
-    for i in xrange(args.num_standby):
-        hostname = args.standby_hostname_prefix + str(i+1)
-        hosts_vars['standby'].append({
-            'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-        })
+    if args.version == 'stable':
+        hosts_vars['version_stable'] = True
+        hosts_vars['master'] = {
+            'hostname': args.master_hostname,
+            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_internal_ip')).rstrip(),
+        }
+        for i in xrange(args.num_standby):
+            hostname = args.standby_hostname_prefix + str(i+1)
+            hosts_vars['standby'].append({
+                'hostname': hostname,
+                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            })
 
     if args.version == 'alpha':
+        hosts_vars['version_alpha'] = True
         for i in xrange(args.num_replicas):
             hostname = args.replica_hostname_prefix + str(i+1)
             vars = {
@@ -118,6 +123,7 @@ def configure_instances_handler(args):
 
     # Generate configuration files needed for configuring the instances.
     if args.version == 'alpha':
+        hosts_vars['version_alpha'] = True
         for replica in hosts_vars['replicas']:
             vars = {
                 'host': replica,

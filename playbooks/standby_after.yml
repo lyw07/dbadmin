@@ -8,7 +8,7 @@
 
     - name: remove postgresql data folder to prepare for standby clone
       file:
-        path: /var/lib/postgresql/9.6/main/
+        path: /var/lib/postgresql/9.6/main
         state: absent
 
     - name: clone standby

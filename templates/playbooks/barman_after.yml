@@ -87,7 +87,7 @@
       command: barman backup <[ master.hostname ]>
 
 - hosts: master
-  - tasks:
+  tasks:
     - name: start repmgrd
       shell: >
         repmgrd -f /etc/repmgr.conf -d --verbose >> 

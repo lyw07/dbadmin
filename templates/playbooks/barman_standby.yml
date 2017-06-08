@@ -1,0 +1,43 @@
+---
+- hosts: barman
+  tasks:
+<[ #version_stable ]>
+    - name: check if standby1 is already registered for wal streaming
+      command: barman check standby1
+      register: standby1_barman_status
+      ignore_errors: true
+  
+    - name: create replication slot for standby1
+      command: barman receive-wal --create-slot {{ hostvars[groups['standby1'][0]]['hostname'] }}
+      become: true
+      become_method: sudo
+      become_user: barman
+      when: '"receive-wal running: FAILED" in standby1_barman_status.stdout'
+
+    - name: check if standby2 is already registered for wal streaming
+      command: barman check standby2
+      register: standby2_barman_status
+      ignore_errors: true
+
+    - name: create replication slot for standby2
+      command: barman receive-wal --create-slot {{ hostvars[groups['standby2'][0]]['hostname'] }}
+      become: true
+      become_method: sudo
+      become_user: barman
+      when: '"receive-wal running: FAILED" in standby2_barman_status.stdout'
+<[ /version_stable ]>
+<[ #version_alpha ]>
+<[ #standby ]>
+    - name: check if <[ hostname ]> is already registered for wal streaming
+      command: barman check <[ hostname ]>
+      register: <[ hostname ]>_barman_status
+      ignore_errors: true
+  
+    - name: create replication slot for <[ hostname ]>
+      command: barman receive-wal --create-slot <[ hostname ]>
+      become: true
+      become_method: sudo
+      become_user: barman
+      when: '"receive-wal running: FAILED" in <[ hostname ]>_barman_status.stdout'
+<[ /standby ]>
+<[ /version_alpha ]>

@@ -147,6 +147,7 @@ def configure_instances_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/db_setup.yml')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_after.yml')
     _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/standby_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/standby_after.yml')
+    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_standby.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_standby.yml')
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [

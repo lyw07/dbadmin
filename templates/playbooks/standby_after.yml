@@ -32,6 +32,9 @@
       register: host_replica_type
       ignore_errors: true
       tags: debug
+      become: true
+      become_user: postgres
+      become_method: sudo
 
     - block:
       - name: register as standby

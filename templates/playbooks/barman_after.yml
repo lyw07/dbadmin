@@ -86,7 +86,7 @@
     - name: backup master server's data
       command: barman backup <[ master.hostname ]>
 
-hosts: master
+- hosts: master
   - tasks:
     - name: start repmgrd
       shell: >

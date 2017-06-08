@@ -85,7 +85,9 @@
 
     - name: backup master server's data
       command: barman backup <[ master.hostname ]>
-  
+
+hosts: master
+  - tasks:
     - name: start repmgrd
       shell: >
         repmgrd -f /etc/repmgr.conf -d --verbose >> 

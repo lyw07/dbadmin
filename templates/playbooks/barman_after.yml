@@ -62,20 +62,10 @@
       lineinfile:
         dest: /var/lib/barman/.ssh/config
         line: 'StrictHostKeyChecking no'
-    
-
-    - name: pause to let the replicas register themselves with barman
-      pause:
-        seconds: 30
-
-    - name: check if host is already registered for wal streaming
-      command: barman check <[ master.hostname ]>
-      register: master_barman_status
-      ignore_errors: true
 
     - name: create replication slot
       command: barman receive-wal --create-slot <[ master.hostname ]>
-      when: '"receive-wal running: FAILED" in master_barman_status.stdout'
+      ignore_errors: true
 
     - name: run barman cron
       command: barman cron

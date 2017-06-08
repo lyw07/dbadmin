@@ -28,16 +28,11 @@
 <[ /version_stable ]>
 <[ #version_alpha ]>
 <[ #standby ]>
-    - name: check if <[ hostname ]> is already registered for wal streaming
-      command: barman check <[ hostname ]>
-      register: <[ hostname ]>_barman_status
-      ignore_errors: true
-  
     - name: create replication slot for <[ hostname ]>
       command: barman receive-wal --create-slot <[ hostname ]>
       become: true
       become_method: sudo
       become_user: barman
-      when: '"receive-wal running: FAILED" in <[ hostname ]>_barman_status.stdout'
+      ignore_errors: true
 <[ /standby ]>
 <[ /version_alpha ]>

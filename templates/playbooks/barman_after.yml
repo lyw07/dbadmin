@@ -85,3 +85,11 @@
 
     - name: backup master server's data
       command: barman backup <[ master.hostname ]>
+  
+    - name: start repmgrd
+      shell: >
+        repmgrd -f /etc/repmgr.conf -d --verbose >> 
+        /var/log/postgresql/postgresql-9.6-main.log 2>&1
+      become: true
+      become_user: postgres
+      become_method: sudo

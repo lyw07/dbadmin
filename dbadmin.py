@@ -168,20 +168,15 @@ def configure_instances_handler(args):
 def initialize_master_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
     import_commands = []
-    if args.database_name and args.database_user:
+    if args.database_name and args.database_user and args.sqldump_location and args.sqldump_location.find(':') > 0:
         db_create_args = {
             'dbname': args.database_name,
             'dbuser': args.database_user,
+            'db_import_bucket': args.sqldump_location.split(':')[0],
+            'db_import_path': args.sqldump_location.split(':')[1]
         }
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_create.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_create.yml')
-        import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_create.yml')
-        if args.sqldump_location and args.sqldump_location.find(':') > 0:
-            db_create_args.update({
-                'db_import_bucket': args.sqldump_location.split(':')[0],
-                'db_import_path': args.sqldump_location.split(':')[1]
-            })
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
-            import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
+        _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
+        import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 
 def reinit_standby_handler(args):

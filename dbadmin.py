@@ -181,7 +181,7 @@ def initialize_master_handler(args):
                 'db_import_path': args.sqldump_location.split(':')[1]
             })
             _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
-            import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
+            import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 
 def add_standby_handler(args):

@@ -154,7 +154,7 @@ def configure_instances_handler(args):
     # Generate the playbook for configuring the replicas, and run it.
     _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
 
-def initialize_master_handler(args):
+def restore_database_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
     if args.sqldump_location and args.sqldump_location.find(':') > 0:
         db_import_vars = {
@@ -166,7 +166,7 @@ def initialize_master_handler(args):
                 'hostname': args.master_hostname
             }
         }
-        _apply_template_and_run_playbook('db_import', db_import_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+        _apply_template_and_run_playbook('restore_database', db_import_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
     else:
         print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
@@ -195,8 +195,6 @@ def bootstrap_handler(args):
     # Generate the bootstrap playbook and run it.
     vars = { 'service_account': args.iam_account }
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
-    #_apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', , _script_root + '/playbooks/bootstrap_admin.yml')
-    #_run_commands(['ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
@@ -228,12 +226,12 @@ configure_instances_parser.add_argument('--replica_hostname_prefix', default='re
 configure_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
 configure_instances_parser.add_argument('--appserver_internalip', default=None, help='Internal IP address of the app server that will talk to the replicas.')
 
-initialize_master_parser = subparsers.add_parser('initialize-master', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
-initialize_master_parser.set_defaults(handler=initialize_master_handler)
-initialize_master_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
-initialize_master_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
-initialize_master_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
-initialize_master_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
+restore_database_parser = subparsers.add_parser('restore-database', help='Restores the master from a sqldump stored in a Google Compute Storage bucket.')
+restore_database_parser.set_defaults(handler=restore_database_handler)
+restore_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+restore_database_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
+restore_database_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
+restore_database_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
 status_parser = subparsers.add_parser('status', help='Show the current status of the setup.')
 status_parser.set_defaults(handler=status_handler)

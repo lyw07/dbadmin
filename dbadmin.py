@@ -74,7 +74,7 @@ def terraform_instances_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
     terraform_commands = [
         _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
     ]
     _run_commands(terraform_commands)
 

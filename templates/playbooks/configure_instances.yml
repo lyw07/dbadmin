@@ -78,32 +78,12 @@
       template: 
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/barman.conf"
         dest: /etc/barman.conf
-
-  <[ #version_stable ]>
-    - name: Copy database server pg's configuration into /etc/barman.d
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/pg.j2"
-        dest: /etc/barman.d/pg.conf
-
-    - name: Copy database server standby1's configuration into /etc/barman.d
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/standby1.j2"
-        dest: /etc/barman.d/standby1.conf
-
-    - name: Copy database server standby2's configuration into /etc/barman.d
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/standby2.j2"
-        dest: /etc/barman.d/standby2.conf
-  <[ /version_stable ]>
-
-  <[ #version_alpha ]>
   <[ #replicas ]>
     - name: copy database server <[ hostname ]>'s configuration into /etc/barman.d
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ hostname ]>.conf"
         dest: /etc/barman.d/<[ hostname ]>.conf
   <[ /replicas ]>
-  <[ /version_alpha ]>
 
     - name: generate ssh keys
       expect: 
@@ -130,32 +110,6 @@
       become_method: sudo
       become_user: barman
 
-  <[ #version_stable ]>
-    - name: create incoming wal directory for master server
-      file:
-        path: /var/lib/barman/{{ hostvars[groups['master'][0]]['hostname'] }}/incoming
-        state: directory
-        owner: barman
-        group: barman
-        mode: 0755
-
-    - name: create incoming wal directory for standby1 server
-      file:
-        path: /var/lib/barman/{{ hostvars[groups['standby1'][0]]['hostname'] }}/incoming
-        state: directory
-        owner: barman
-        group: barman
-        mode: 0755
-
-    - name: create incoming wal directory for standby2 server
-      file:
-        path: /var/lib/barman/{{ hostvars[groups['standby2'][0]]['hostname'] }}/incoming
-        state: directory
-        owner: barman
-        group: barman
-        mode: 0755
-  <[ /version_stable ]>
-  <[ #version_alpha ]>
   <[ #replicas ]>
     - name: create incoming wal directory for <[ hostname ]> server
       file:
@@ -165,10 +119,8 @@
         group: barman
         mode: 0755
   <[ /replicas ]>
-  <[ /version_alpha ]>
 
 # Configuring all replicas - ssh-keys, and postgres configuration.
-<[ #version_alpha ]>
 - hosts: replicas
   tasks:
     - block: 
@@ -279,223 +231,13 @@
       become_user: postgres
       become_method: sudo
       when: '"master" not in host_replica_type.stdout'
-<[ /version_alpha ]>
-<[ #version_stable ]>
-# Configuring the master - generate ssh keys, register as repmgr master.
-- hosts: master
-  tasks:
-    - name: copy postgresql configuration file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/postgresql.j2"
-        dest: /etc/postgresql/9.6/main/postgresql.conf
-
-    - name: copy pg_hba file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/pg_hba.j2"
-        dest: /etc/postgresql/9.6/main/pg_hba.conf
-        
-    - name: create repmgr.conf
-      template:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/master/repmgr.j2"
-        dest: /etc/repmgr.conf
-
-    - block: 
-      - name: generate ssh keys
-        expect: 
-          command: ssh-keygen -t rsa
-          responses:
-            'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
-            'Enter passphrase \(empty for no passphrase\):': "\n"
-            'Enter same passphrase again:': "\n"
-          creates: /var/lib/postgresql/.ssh/id_rsa
-            
-      - name: create config for ssh
-        file: 
-          path: /var/lib/postgresql/.ssh/config
-          state: touch
-
-      - name: add barman server's ip address to config
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
-
-      - name: ignore ssh host key checking
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: 'StrictHostKeyChecking no'
-      become: true
-      become_method: sudo
-      become_user: postgres
-
-    - name: fetch the public key to store in the local box
-      fetch:
-        src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: /tmp
-
-    - name: restart server
-      service:
-        name: postgresql
-        state: restarted
-
-    - name: reload configuration files
-      service:
-        name: postgresql
-        state: reloaded
-    
-    - name: create user repmgr
-      postgresql_user:
-        name: repmgr
-        role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
-
-    - name: create database repmgr
-      postgresql_db:
-        name: repmgr
-        owner: repmgr
-
-    - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
-      register: host_replica_type
-      ignore_errors: True
-      tags: debug
-    
-    - name: register as master
-      command: repmgr -f /etc/repmgr.conf master register
-      become: true
-      become_user: postgres
-      become_method: sudo
-      when: '"master" not in host_replica_type.stdout'
-
-# Configuring standby1 - copy postgres configuration
-- hosts: standby1
-  tasks:
-    - name: copy postgresql configuration file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/postgresql.j2"
-        dest: /etc/postgresql/9.6/main/postgresql.conf
-
-    - name: copy pg_hba file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/pg_hba.j2"
-        dest: /etc/postgresql/9.6/main/pg_hba.conf
-
-    - name: create repmgr.conf
-      template:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_one/repmgr.j2"
-        dest: /etc/repmgr.conf
-
-# Configuring standby2 - copy postgres configuration
-- hosts: standby2
-  tasks:
-    - name: copy postgresql configuration file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/postgresql.j2"
-        dest: /etc/postgresql/9.6/main/postgresql.conf
-
-    - name: copy pg_hba file into the data folder
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/pg_hba.j2"
-        dest: /etc/postgresql/9.6/main/pg_hba.conf
-
-    - name: create repmgr.conf
-      template:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/standby/standby_two/repmgr.j2"
-        dest: /etc/repmgr.conf
-
-# Configuring standbys - setup ssh-keys.
-- hosts: standby
-  tasks: 
-    - name: add postgres as a sudoer
-      lineinfile:
-        dest: /etc/sudoers.d/postgres
-        line: >
-          postgres ALL=(root) NOPASSWD: /bin/systemctl start postgresql, 
-          /bin/systemctl stop postgresql, 
-          /bin/systemctl restart postgresql, 
-          /bin/systemctl reload postgresql, 
-          /usr/bin/pg_ctlcluster 9.6 main promote
-        create: yes
-        state: present
-        mode: 0600
-
-    - block: 
-      - name: generate ssh keys
-        expect: 
-          command: ssh-keygen -t rsa
-          responses:
-            'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
-            'Enter passphrase \(empty for no passphrase\):': "\n"
-            'Enter same passphrase again:': "\n"
-          creates: /var/lib/postgresql/.ssh/id_rsa
-            
-      - name: create config for ssh
-        file: 
-          path: /var/lib/postgresql/.ssh/config
-          state: touch
-
-      - name: add barman server ip address to config
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
-      
-      - name: add user barman to config
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: 'User barman'
-
-      - name: ignore ssh host key checking
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: 'StrictHostKeyChecking no'
-
-      - name: copy barman public key into authorized_keys
-        copy:
-          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
-          dest: /var/lib/postgresql/.ssh/authorized_keys
-          mode: 0600
-      become: true
-      become_method: sudo
-      become_user: postgres
-
-    - name: fetch the public key to store in the local box
-      fetch:
-        src: /var/lib/postgresql/.ssh/id_rsa.pub
-        dest: /tmp
-
-<[ /version_stable ]>
 
 # Back to barman - configure/copy barman ssh-keys, force backup master.
 - hosts: barman
   become: true
   become_method: sudo
   become_user: barman
-  tasks: 
-  <[ #version_stable ]>
-    - name: copy postgresql public key into authorized_keys
-      copy:
-        src: /tmp/<[ master.hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub
-        dest: /var/lib/barman/.ssh/authorized_keys
-        mode: 0600
-    - name: add standby1's public key into authorized_keys
-      lineinfile:
-        dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', '/tmp/standby1/var/lib/postgresql/.ssh/id_rsa.pub') }}"
-
-    - name: add standby2's public key into authorized_keys
-      lineinfile:
-        dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', '/tmp/standby2/var/lib/postgresql/.ssh/id_rsa.pub') }}"
-    
-    - name: add standby1's ip address to config
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: "Host {{ hostvars[groups['standby1'][0]]['hostname'] }}"
-
-    - name: add standby2's ip address to config
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: "Host {{ hostvars[groups['standby2'][0]]['hostname'] }}"
-  <[ /version_stable ]>
-  <[ #version_alpha ]> 
+  tasks:
     - name: create config for ssh
       file: 
         path: /var/lib/barman/.ssh/authorized_keys
@@ -511,7 +253,6 @@
         dest: /var/lib/barman/.ssh/config
         line: "Host <[ hostname ]>"
   <[ /replicas ]>
-  <[ /version_alpha ]>
 
     - name: ignore ssh host key checking
       lineinfile:
@@ -605,32 +346,6 @@
 # Prepare barman to receive wals from standbys.
 - hosts: barman
   tasks:
-  <[ #version_stable ]>
-    - name: check if standby1 is already registered for wal streaming
-      command: barman check standby1
-      register: standby1_barman_status
-      ignore_errors: true
-  
-    - name: create replication slot for standby1
-      command: barman receive-wal --create-slot {{ hostvars[groups['standby1'][0]]['hostname'] }}
-      become: true
-      become_method: sudo
-      become_user: barman
-      when: '"receive-wal running: FAILED" in standby1_barman_status.stdout'
-
-    - name: check if standby2 is already registered for wal streaming
-      command: barman check standby2
-      register: standby2_barman_status
-      ignore_errors: true
-
-    - name: create replication slot for standby2
-      command: barman receive-wal --create-slot {{ hostvars[groups['standby2'][0]]['hostname'] }}
-      become: true
-      become_method: sudo
-      become_user: barman
-      when: '"receive-wal running: FAILED" in standby2_barman_status.stdout'
-  <[ /version_stable ]>
-  <[ #version_alpha ]>
   <[ #standby ]>
     - name: create replication slot for <[ hostname ]>
       command: barman receive-wal --create-slot <[ hostname ]>
@@ -639,4 +354,3 @@
       become_user: barman
       ignore_errors: true
   <[ /standby ]>
-  <[ /version_alpha ]>

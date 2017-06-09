@@ -184,7 +184,16 @@ def initialize_master_handler(args):
             import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 
-def add_standby_handler(args):
+def reinit_standby_handler(args):
+    # Destroy the instance and recreate it the terraform configuration files.
+    commands = [
+        'gcloud compute instances delete ' + args.instance,
+        _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
+        'ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
+    ]
+    _run_commands(commands)
+
+def status_handler(args):
     pass
 
 def bootstrap_handler(args):
@@ -237,8 +246,12 @@ initialize_master_parser.add_argument('--database_name', required=True, help='Na
 initialize_master_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
 initialize_master_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
-add_standby_parser = subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
-add_standby_parser.set_defaults(handler=add_standby_handler)
+status_parser = subparsers.add_parser('status', help='Show the current status of the setup.')
+status_parser.set_defaults(handler=status_handler)
+
+reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed master and adds it back as a standby to the current configuration.')
+reinit_standby_parser.add_argument('--instance', required=True, help='Hostname of the instance to be destroyed and recreated.')
+reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')

@@ -74,7 +74,7 @@ def terraform_instances_handler(args):
     _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
     terraform_commands = [
         _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
     ]
     _run_commands(terraform_commands)
 
@@ -155,13 +155,13 @@ def configure_instances_handler(args):
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/get_ip.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_setup.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/postgresql_install.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_setup.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_after.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/standby_after.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_standby.yml'
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/get_ip.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_setup.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/postgresql_install.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_setup.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_after.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/standby_after.yml',
+        'ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_standby.yml'
     ]
     _run_commands(ansible_commands)
 
@@ -181,7 +181,7 @@ def initialize_master_handler(args):
                 'db_import_path': args.sqldump_location.split(':')[1]
             })
             _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
-            import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
+            import_commands.append('ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 
 def add_standby_handler(args):
@@ -199,7 +199,7 @@ def bootstrap_handler(args):
 
     # Generate the bootstrap playbook and run it.
     _apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _script_root + '/playbooks/bootstrap_admin.yml')
-    _run_commands(['ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
+    _run_commands(['ansible-playbook ' + '-vvvv -i ' if args.debug else '-i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
@@ -241,6 +241,7 @@ add_standby_parser = subparsers.add_parser('add-standby', help='Adds another sta
 add_standby_parser.set_defaults(handler=add_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
+parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')
 
 args = parser.parse_args()
 args.handler(args)

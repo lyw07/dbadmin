@@ -53,6 +53,10 @@
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/playbooks"
         dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
+    - name: copy script files
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/scripts"
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
     - name: copy ip.j2
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/ip.j2"

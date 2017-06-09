@@ -64,10 +64,10 @@ def terraform_instances_handler(args):
     _apply_template(_template_root + '/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_template_root + '/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    terraform_commands = [
-        _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-    ]
-    _run_commands(terraform_commands)
+    #terraform_commands = [
+    #    _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
+    #]
+    #_run_commands(terraform_commands)
     _apply_template_and_run_playbook('terraform_after', {}, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):

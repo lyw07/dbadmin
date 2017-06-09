@@ -68,7 +68,7 @@ def terraform_instances_handler(args):
     #    _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
     #]
     #_run_commands(terraform_commands)
-    _apply_template_and_run_playbook('terraform_after', {}, local=True, hosts=_script_root + '/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('terraform_instances', {}, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.

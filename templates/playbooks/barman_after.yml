@@ -6,10 +6,11 @@
   tasks: 
     - name: copy postgresql public key into authorized_keys
       copy:
-        src: /tmp/master/var/lib/postgresql/.ssh/id_rsa.pub
+        src: /tmp/<[ master.hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub
         dest: /var/lib/barman/.ssh/authorized_keys
         mode: 0600
 
+<[ #version_stable ]>
     - name: add standby1's public key into authorized_keys
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
@@ -19,12 +20,24 @@
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
         line: "{{ lookup('file', '/tmp/standby2/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+<[ /version_stable ]>
+
+<[ #version_alpha ]>
+<[ #replicas ]>
+
+    - name: add <[ hostname ]>'s public key into authorized_keys
+      lineinfile:
+        dest: /var/lib/barman/.ssh/authorized_keys
+        line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+<[ /replicas ]>
+<[ /version_alpha ]>
 
     - name: create config for ssh
       file: 
         path: /var/lib/barman/.ssh/config
         state: touch
 
+<[ #version_stable ]>
     - name: add standby1's ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
@@ -34,20 +47,25 @@
       lineinfile:
         dest: /var/lib/barman/.ssh/config
         line: "Host {{ hostvars[groups['standby2'][0]]['hostname'] }}"
+<[ /version_stable ]>
+<[ #version_alpha ]>
+<[ #replicas ]>
+
+    - name: add <[ hostname ]>'s ip address to config
+      lineinfile:
+        dest: /var/lib/barman/.ssh/config
+        line: "Host <[ hostname ]>"
+<[ /replicas ]>
+<[ /version_alpha ]>
 
     - name: ignore ssh host key checking
       lineinfile:
         dest: /var/lib/barman/.ssh/config
         line: 'StrictHostKeyChecking no'
-    
-    - name: check if host is already registered for wal streaming
-      command: barman check master
-      register: master_barman_status
-      ignore_errors: true
 
     - name: create replication slot
-      command: barman receive-wal --create-slot {{ hostvars[groups['master'][0]]['hostname'] }}
-      when: '"receive-wal running: FAILED" in master_barman_status.stdout'
+      command: barman receive-wal --create-slot <[ master.hostname ]>
+      ignore_errors: true
 
     - name: run barman cron
       command: barman cron
@@ -63,11 +81,13 @@
         job: "/usr/bin/barman cron"
 
     - name: switch-xlog
-      command: barman switch-xlog --force --archive {{ hostvars[groups['master'][0]]['hostname'] }}
+      command: barman switch-xlog --force --archive <[ master.hostname ]>
 
     - name: backup master server's data
-      command: barman backup {{ hostvars[groups['master'][0]]['hostname'] }}
-  
+      command: barman backup <[ master.hostname ]>
+
+- hosts: master
+  tasks:
     - name: start repmgrd
       shell: >
         repmgrd -f /etc/repmgr.conf -d --verbose >> 

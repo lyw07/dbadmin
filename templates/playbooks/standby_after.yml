@@ -7,13 +7,11 @@
         state: stopped
 
     - name: remove postgresql data folder to prepare for standby clone
-      file:
-        path: /var/lib/postgresql/9.6/main
-        state: absent
+      command: rm -rf /var/lib/postgresql/9.6/main
 
     - name: clone standby
       command: >
-        repmgr -h {{ hostvars[groups['master'][0]]['hostname'] }} -d repmgr
+        repmgr -h <[ master.hostname ]> -d repmgr
         -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
       become: true
       become_user: postgres
@@ -30,10 +28,13 @@
         state: reloaded
     
     - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_master.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_<[ master.hostname ]>.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
       register: host_replica_type
       ignore_errors: true
       tags: debug
+      become: true
+      become_user: postgres
+      become_method: sudo
 
     - block:
       - name: register as standby

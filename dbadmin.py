@@ -40,6 +40,10 @@ def _run_commands(commands):
             return False
     return True
 
+def _apply_template_and_run_playbook(playbook, vars, hosts, debug=False, local=False):
+    _apply_template(_template_root + '/playbooks/' + playbook + '.yml', vars, _home_dir + '/.dbadmin/playbooks/' + playbook + '.yml')
+    _run_commands(['ansible-playbook ' + ('-vvvv -i ' if debug else '-i ') + hosts + ' ' + ('-c local ' if local else '') + _home_dir + '/.dbadmin/playbooks/' + playbook + '.yml'])
+
 def terraform_instances_handler(args):
     # Generate the terraform variables configuration file and run terraform apply
     tf_vars = {
@@ -147,19 +151,13 @@ def configure_instances_handler(args):
                 os.makedirs(script_dir)
             _apply_template(_template_root + '/scripts/restore.py', vars, script_dir + '/restore.py')
 
-    # Generate the necessary playbooks for configuring the replicas.
-    _apply_template(_template_root + '/playbooks/configure_instances.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/configure_instances.yml')
-
-    ansible_commands = [
-        'ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/configure_instances.yml'
-    ]
-    _run_commands(ansible_commands)
+    # Generate the playbook for configuring the replicas, and run it.
+    _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
 
 def initialize_master_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
-    import_commands = []
-    if args.database_name and args.database_user and args.sqldump_location and args.sqldump_location.find(':') > 0:
-        db_create_args = {
+    if args.sqldump_location and args.sqldump_location.find(':') > 0:
+        db_import_vars = {
             'dbname': args.database_name,
             'dbuser': args.database_user,
             'db_import_bucket': args.sqldump_location.split(':')[0],
@@ -168,9 +166,9 @@ def initialize_master_handler(args):
                 'hostname': args.master_hostname
             }
         }
-        _apply_template(_template_root + '/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
-        import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
-    _run_commands(import_commands)
+        _apply_template_and_run_playbook('db_import', db_import_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+    else:
+        print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
 def reinit_standby_handler(args):
     # Destroy the instance and recreate it the terraform configuration files.
@@ -195,8 +193,10 @@ def bootstrap_handler(args):
     _run_commands(bootstrap_commands)
 
     # Generate the bootstrap playbook and run it.
-    _apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _script_root + '/playbooks/bootstrap_admin.yml')
-    _run_commands(['ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
+    vars = { 'service_account': args.iam_account }
+    _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
+    #_apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', , _script_root + '/playbooks/bootstrap_admin.yml')
+    #_run_commands(['ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')

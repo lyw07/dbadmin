@@ -495,7 +495,11 @@
         dest: /var/lib/barman/.ssh/config
         line: "Host {{ hostvars[groups['standby2'][0]]['hostname'] }}"
   <[ /version_stable ]>
-  <[ #version_alpha ]>
+  <[ #version_alpha ]> 
+  - name: create config for ssh
+    file: 
+      path: /var/lib/postgresql/.ssh/authorized_keys
+      state: touch
   <[ #replicas ]>
     - name: add <[ hostname ]>'s public key into authorized_keys
       lineinfile:

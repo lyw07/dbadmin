@@ -6,6 +6,7 @@ import os
 
 _script_root = os.path.dirname(os.path.realpath(__file__))
 _home_dir = os.path.expanduser('~')
+_template_root = _home_dir + '/.dbadmin/templates'
 
 def _as_array(val):
     return val.split()
@@ -69,9 +70,9 @@ def terraform_instances_handler(args):
                 'hostname': hostname,
             })
     # Generate terraform files from templates and run terraform.
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
+    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
+    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
+    _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
     terraform_commands = [
         _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
         'ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
@@ -120,7 +121,7 @@ def configure_instances_handler(args):
                 hosts_vars['master'] = vars
             else:
                 hosts_vars['standby'].append(vars)
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+    _apply_template(_template_root + '/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
 
     # Generate configuration files needed for configuring the instances.
     if hosts_vars['version_alpha']:
@@ -137,21 +138,21 @@ def configure_instances_handler(args):
             host_config_dir = _home_dir + '/.dbadmin/config/' + replica['hostname']
             if not os.path.exists(host_config_dir):
                 os.makedirs(host_config_dir)
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
+            _apply_template(_template_root + '/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
+            _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
+            _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
+            _apply_template(_template_root + '/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
             script_dir = _home_dir + '/.dbadmin/scripts'
             if not os.path.exists(script_dir):
                 os.makedirs(script_dir)
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/scripts/restore.py', vars, script_dir + '/restore.py')
+            _apply_template(_template_root + '/scripts/restore.py', vars, script_dir + '/restore.py')
 
     # Generate the necessary playbooks for configuring the replicas.
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/db_setup.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_after.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/standby_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/standby_after.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_standby.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_standby.yml')
+    _apply_template(_template_root + '/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')
+    _apply_template(_template_root + '/playbooks/db_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/db_setup.yml')
+    _apply_template(_template_root + '/playbooks/barman_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_after.yml')
+    _apply_template(_template_root + '/playbooks/standby_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/standby_after.yml')
+    _apply_template(_template_root + '/playbooks/barman_standby.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_standby.yml')
 
     # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
     ansible_commands = [
@@ -178,7 +179,7 @@ def initialize_master_handler(args):
                 'hostname': args.master_hostname
             }
         }
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
+        _apply_template(_template_root + '/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
         import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
     _run_commands(import_commands)
 

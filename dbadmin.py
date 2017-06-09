@@ -6,7 +6,7 @@ import os
 
 _script_root = os.path.dirname(os.path.realpath(__file__))
 _home_dir = os.path.expanduser('~')
-_template_root = _home_dir + '/.dbadmin/templates'
+_template_root = _home_dir + '/.dbadmin/repo/templates'
 
 def _as_array(val):
     return val.split()

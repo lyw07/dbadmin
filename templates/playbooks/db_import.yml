@@ -35,3 +35,10 @@
     
     - name: unmount the sqldump bucket
       command: "fusermount -u {{ ansible_env.HOME }}/.gcloud/storage"
+
+- hosts: barman
+  tasks:
+    - name: switch-xlog
+      command: barman switch-xlog --force --archive <[ master.hostname ]>
+    - name: backup master server's data
+      command: barman backup <[ master.hostname ]>

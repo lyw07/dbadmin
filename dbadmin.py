@@ -173,7 +173,10 @@ def initialize_master_handler(args):
             'dbname': args.database_name,
             'dbuser': args.database_user,
             'db_import_bucket': args.sqldump_location.split(':')[0],
-            'db_import_path': args.sqldump_location.split(':')[1]
+            'db_import_path': args.sqldump_location.split(':')[1],
+            'master': {
+                'hostname': args.master_hostname
+            }
         }
         _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
         import_commands.append('ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
@@ -237,6 +240,7 @@ configure_instances_parser.add_argument('--appserver_internalip', default=None, 
 
 initialize_master_parser = subparsers.add_parser('initialize-master', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
 initialize_master_parser.set_defaults(handler=initialize_master_handler)
+initialize_master_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 initialize_master_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
 initialize_master_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
 initialize_master_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')

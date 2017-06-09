@@ -141,6 +141,10 @@ def configure_instances_handler(args):
             _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
             _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
             _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
+            script_dir = _home_dir + '/.dbadmin/scripts'
+            if not os.path.exists(script_dir):
+                os.makedirs(script_dir)
+            _apply_template(_home_dir + '/.dbadmin/repo/templates/scripts/restore.py', vars, script_dir + '/restore.py')
 
     # Generate the necessary playbooks for configuring the replicas.
     _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')

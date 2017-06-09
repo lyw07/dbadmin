@@ -100,7 +100,7 @@ resource "google_compute_instance_group" "cluster" {
   name = "postgres-cluster"
   description = "Cluster containing db management instance and replicas"
 
-  instances [
+  instances = [
     "${google_compute_instance.barman.self_link}",
     <[ #replicas ]>
     "${google_compute_instance.<[ hostname ]>.self_link}",

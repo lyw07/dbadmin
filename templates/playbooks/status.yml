@@ -1,7 +1,8 @@
 ---
 - hosts: barman
   tasks:
-    - command: barman list-server
+    - name: Servers registered on barman
+      command: barman list-server
       register: barman_list_server
       become: true
       become_method: sudo

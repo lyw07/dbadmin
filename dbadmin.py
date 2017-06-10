@@ -148,7 +148,7 @@ def reinit_standby_handler(args):
     _apply_template_and_run_playbook('reinit_standby', vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
 
 def status_handler(args):
-    pass
+    _apply_template_and_run_playbook('status', {}, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
 
 def bootstrap_handler(args):
     # Install and update pip, curl and other dependencies so that _apply_template can be run.

@@ -20,6 +20,7 @@
       become_method: sudo
 
 - hosts: gateway
+  tasks:
     - name: delete the failed master instance
       command: gcloud compute instances delete <[ replica.hostname ]>
 

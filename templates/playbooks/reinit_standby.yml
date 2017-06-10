@@ -10,7 +10,6 @@
       copy:
         src: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"
         dest: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
-        creates: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
     
     - name: activate service account on the master
       command: "gcloud auth activate-service-account --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json"

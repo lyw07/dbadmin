@@ -157,7 +157,8 @@ def bootstrap_handler(args):
         'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
         'sudo pip install --upgrade pip',
         'sudo pip install ansible pystache',
-        'mkdir -p .dbadmin/playbooks'
+        'mkdir -p .dbadmin/playbooks',
+        'cp ' + _script_root + '/ip.j2 .dbadmin/ip.j2'
     ]
     _run_commands(bootstrap_commands)
 

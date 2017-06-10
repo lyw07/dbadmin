@@ -24,6 +24,8 @@
 
     - name: backup the db folder of the failed instance to Google Compute Storage for later inspection
       command: "cp /var/lib/postgresql/9.6/main {{ ansible_env.HOME }}/.gcloud/storage/<[ replica.hostname ]>-{{ ansible_date_time.epoch }}"
+      become: true
+      become_method: sudo
 
     - name: unmount the sqldump bucket
       command: "fusermount -u {{ ansible_env.HOME }}/.gcloud/storage"

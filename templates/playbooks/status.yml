@@ -7,5 +7,5 @@
       become: true
       become_method: sudo
       become_user: barman
-    - debug:
-        msg: "{{ barman_list_server.stdout }}"
+    - local_action: command echo item
+      with_items: barman_list_server.stdout_lines

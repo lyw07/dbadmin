@@ -103,10 +103,15 @@ def configure_instances_handler(args):
             },
             'master': hosts_vars['master'],
         }
+        
+        barman_config_dir = _working_root + '/config/barman'
+        if not os.path.exists(barman_config_dir):
+            os.makedirs(barman_config_dir)
+        _apply_template(_template_root + '/config/barman/barman.conf', {}, _working_root + '/config/barman/barman.conf')
+
         host_config_dir = _working_root + '/config/' + replica['hostname']
         if not os.path.exists(host_config_dir):
             os.makedirs(host_config_dir)
-        _apply_template(_template_root + '/config/barman/barman.conf', {}, _working_root + '/config/barman/barman.conf')
         _apply_template(_template_root + '/config/barman/replica.conf', vars, _working_root + '/config/barman/' + replica['hostname'] + '.conf')
         _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
         _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')

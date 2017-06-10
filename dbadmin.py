@@ -106,6 +106,7 @@ def configure_instances_handler(args):
         host_config_dir = _working_root + '/config/' + replica['hostname']
         if not os.path.exists(host_config_dir):
             os.makedirs(host_config_dir)
+        _apply_template(_template_root + '/config/barman/barman.conf', {}, _working_root + '/config/barman/barman.conf')
         _apply_template(_template_root + '/config/barman/replica.conf', vars, _working_root + '/config/barman/' + replica['hostname'] + '.conf')
         _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
         _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
@@ -113,7 +114,9 @@ def configure_instances_handler(args):
         script_dir = _working_root + '/scripts'
         if not os.path.exists(script_dir):
             os.makedirs(script_dir)
-        _apply_template(_template_root + '/scripts/restore.py', vars, script_dir + '/restore.py')
+        _apply_template(_template_root + '/scripts/follow.sh', {}, _working_root + '/scripts/follow.sh')
+        _apply_template(_template_root + '/scripts/promote.sh', {}, _working_root + '/scripts/promote.sh')
+        _apply_template(_template_root + '/scripts/restore.py', vars, _working_root + '/scripts/restore.py')
 
     # Generate the playbook for configuring the replicas, and run it.
     _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)

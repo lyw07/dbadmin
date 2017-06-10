@@ -42,6 +42,10 @@
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts"
         state: directory
+    - name: copy ip.j2
+      copy:
+        src: ../ip.j2
+        dest: "{{ lookup('env', 'HOME') }}/.dbadmin/ip.j2"
     - name: download and unarchive terraform
       unarchive: 
         src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip

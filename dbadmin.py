@@ -64,10 +64,6 @@ def terraform_instances_handler(args):
     _apply_template(_template_root + '/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_template_root + '/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    #terraform_commands = [
-    #    _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-    #]
-    #_run_commands(terraform_commands)
     _apply_template_and_run_playbook('terraform_instances', {}, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):
@@ -140,12 +136,16 @@ def restore_database_handler(args):
 
 def reinit_standby_handler(args):
     # Destroy the instance and recreate it the terraform configuration files.
-    commands = [
-        'gcloud compute instances delete ' + args.instance,
-        _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-        'ansible-playbook ' + ('-vvvv -i ' if args.debug else '-i ') + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
-    ]
-    _run_commands(commands)
+    vars = {
+        'replica': {
+            'hostname': args.standby_hostname,
+        },
+        'master': {
+            'hostname': args.master_hostname,
+        },
+        'gcs_bucket': args.gcs_bucket,
+    }
+    _apply_template_and_run_playbook('reinit_standby', vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
 
 def status_handler(args):
     pass
@@ -205,7 +205,9 @@ status_parser = subparsers.add_parser('status', help='Show the current status of
 status_parser.set_defaults(handler=status_handler)
 
 reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed master and adds it back as a standby to the current configuration.')
-reinit_standby_parser.add_argument('--instance', required=True, help='Hostname of the instance to be destroyed and recreated.')
+reinit_standby_parser.add_argument('--standby_hostname', required=True, help='Hostname of the failed master to be added back as a standby.')
+reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+reinit_standby_parser.add_argument('--gcs_bucket', required=True, help='Bucket to backup the failed master\'s data directory before recreating it.')
 reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')

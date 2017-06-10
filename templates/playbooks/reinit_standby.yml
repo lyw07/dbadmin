@@ -1,6 +1,42 @@
 ---
-# Base configuration. Install dependencies and configure hosts. 
-- hosts: all
+- hosts: <[ replica.hostname ]>
+  tasks:
+    - name: create a .gcloud directory readable only by root.
+      file:
+        name: "{{ ansible_env.HOME }}/.gcloud"
+        state: directory
+
+    - name: copy service account credentials to master
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"
+        dest: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+        creates: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+    
+    - name: activate service account on the master
+      command: "gcloud auth activate-service-account --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+
+    - name: create directory for mountpoint
+      file:
+        path: "{{ ansible_env.HOME }}/.gcloud/storage"
+        state: directory
+  
+    - name: mount the failedinstances bucket on the local directory
+      command: "gcsfuse --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json <[ gcs_bucket ]> {{ ansible_env.HOME }}/.gcloud/storage"
+
+    - name: backup the db folder of the failed instance to Google Compute Storage for later inspection
+      command: "cp /var/lib/postgresql/9.6/main {{ ansible_env.HOME }}/.gcloud/storage/<[ replica.hostname ]>-{{ ansible_date_time.epoch }}"
+
+    - name: unmount the sqldump bucket
+      command: "fusermount -u {{ ansible_env.HOME }}/.gcloud/storage"
+
+    - name: delete the failed master instance
+      command: gcloud compute instances delete <[ replica.hostname ]>
+
+# Let terraform recreate the instance for us
+- include: "{{ lookup('env', 'HOME') }}/.dbadmin/playbooks/terraform_instances.yml"
+
+# Install prerequisites for the standby.
+- hosts: <[ replica.hostname ]>
   tasks:
     - name: add gcsfuse to apt sources list
       apt_repository:
@@ -67,61 +103,31 @@
         dest: /etc/hosts
         line: "{{ ip.stdout }}"
 
-# Install and configure barman
+# We assume barman is already up and running. So just need to generate and
+# add this standby's configuration into barman.d, and take barman's ssh key
+# and make it available in this standby.
 - hosts: barman
   tasks:
-    - name: install barman
-      apt:
-        name: barman
-
-    - name: copy barman server configuration into /etc/barman.d
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/barman.conf"
-        dest: /etc/barman.conf
-  <[ #replicas ]>
-    - name: copy database server <[ hostname ]>'s configuration into /etc/barman.d
+    - name: copy database server <[ replica.hostname ]>'s configuration into /etc/barman.d
       copy:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ hostname ]>.conf"
-        dest: /etc/barman.d/<[ hostname ]>.conf
-  <[ /replicas ]>
-
-    - name: generate ssh keys
-      expect: 
-        command: ssh-keygen -t rsa
-        responses:
-          'Enter file in which to save the key \(/var/lib/barman/.ssh/id_rsa\):': "\n"
-          'Enter passphrase \(empty for no passphrase\):': "\n"
-          'Enter same passphrase again:': "\n"
-        creates: /var/lib/barman/.ssh/id_rsa
-      become: true
-      become_method: sudo
-      become_user: barman
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ replica.hostname ]>.conf"
+        dest: /etc/barman.d/<[ replica.hostname ]>.conf
 
     - name: fetch the public key of barman to store in the local box
       fetch:
         src: /var/lib/barman/.ssh/id_rsa.pub
         dest: /tmp
 
-    - name: create config for ssh
-      file: 
-        path: /var/lib/barman/.ssh/config
-        state: touch
-      become: true
-      become_method: sudo
-      become_user: barman
-
-  <[ #replicas ]>
-    - name: create incoming wal directory for <[ hostname ]> server
+    - name: create incoming wal directory for <[ replica.hostname ]> server
       file:
-        path: /var/lib/barman/<[ hostname ]>/incoming
+        path: /var/lib/barman/<[ replica.hostname ]>/incoming
         state: directory
         owner: barman
         group: barman
         mode: 0755
-  <[ /replicas ]>
 
-# Configuring all replicas - ssh-keys, and postgres configuration.
-- hosts: replicas
+# Configuring the standby.
+- hosts: <[ replica.hostname ]>
   tasks:
     - block: 
       - name: generate ssh keys
@@ -165,9 +171,9 @@
         dest: /etc/sudoers.d/postgres
         line: >
           postgres ALL=(root) NOPASSWD: /bin/systemctl start postgresql, 
-          /bin/systemctl stop postgresql,
-          /bin/systemctl restart postgresql,
-          /bin/systemctl reload postgresql,
+          /bin/systemctl stop postgresql, 
+          /bin/systemctl restart postgresql, 
+          /bin/systemctl reload postgresql, 
           /usr/bin/pg_ctlcluster 9.6 main promote
         create: yes
         state: present
@@ -206,32 +212,6 @@
         name: postgresql
         state: reloaded
 
-# Registering the master on repmgr.
-- hosts: master
-  tasks:
-    - name: create user repmgr
-      postgresql_user:
-        name: repmgr
-        role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
-
-    - name: create database repmgr
-      postgresql_db:
-        name: repmgr
-        owner: repmgr
-
-    - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_<[ master.hostname ]>.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
-      register: host_replica_type
-      ignore_errors: True
-      tags: debug
-    
-    - name: register as master
-      command: repmgr -f /etc/repmgr.conf master register
-      become: true
-      become_user: postgres
-      become_method: sudo
-      when: '"master" not in host_replica_type.stdout'
-
 # Back to barman - configure/copy barman ssh-keys, force backup master.
 - hosts: barman
   become: true
@@ -242,58 +222,24 @@
       file: 
         path: /var/lib/barman/.ssh/authorized_keys
         state: touch
-  <[ #replicas ]>
-    - name: add <[ hostname ]>'s public key into authorized_keys
+
+    - name: add <[ replica.hostname ]>'s public key into authorized_keys
       lineinfile:
         dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+        line: "{{ lookup('file', '/tmp/<[ replica.hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
 
-    - name: add <[ hostname ]>'s ip address to config
+    - name: add <[ replica.hostname ]>'s ip address to config
       lineinfile:
         dest: /var/lib/barman/.ssh/config
-        line: "Host <[ hostname ]>"
-  <[ /replicas ]>
+        line: "Host <[ replica.hostname ]>"
 
     - name: ignore ssh host key checking
       lineinfile:
         dest: /var/lib/barman/.ssh/config
         line: 'StrictHostKeyChecking no'
 
-    - name: create replication slot
-      command: barman receive-wal --create-slot <[ master.hostname ]>
-      ignore_errors: true
-
-    - name: run barman cron
-      command: barman cron
-
-    - name: create a crontab to run barman cron every minute
-      cron:
-        name: "barman cron in every minute"
-        minute: "*"
-        hour: "*"
-        day: "*"
-        month: "*"
-        weekday: "*"
-        job: "/usr/bin/barman cron"
-
-    - name: switch-xlog
-      command: barman switch-xlog --force --archive <[ master.hostname ]>
-
-    - name: backup master server's data
-      command: barman backup <[ master.hostname ]>
-
-- hosts: master
-  tasks:
-    - name: start repmgrd
-      shell: >
-        repmgrd -f /etc/repmgr.conf -d --verbose >> 
-        /var/log/postgresql/postgresql-9.6-main.log 2>&1
-      become: true
-      become_user: postgres
-      become_method: sudo
-
 # Configure standby as standby instances on repmgr. 
-- hosts: standby
+- hosts: <[ replica.hostname ]>
   tasks:   
     - name: stop standby server
       service:
@@ -346,11 +292,9 @@
 # Prepare barman to receive wals from standbys.
 - hosts: barman
   tasks:
-  <[ #standby ]>
-    - name: create replication slot for <[ hostname ]>
-      command: barman receive-wal --create-slot <[ hostname ]>
+    - name: create replication slot for <[ replica.hostname ]>
+      command: barman receive-wal --create-slot <[ replica.hostname ]>
       become: true
       become_method: sudo
       become_user: barman
       ignore_errors: true
-  <[ /standby ]>

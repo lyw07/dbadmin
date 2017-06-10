@@ -14,21 +14,10 @@
     - name: activate service account on the master
       command: "gcloud auth activate-service-account --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json"
 
-    - name: create directory for mountpoint
-      file:
-        path: "{{ ansible_env.HOME }}/.gcloud/storage"
-        state: directory
-  
-    - name: mount the failedinstances bucket on the local directory
-      command: "gcsfuse --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json <[ gcs_bucket ]> {{ ansible_env.HOME }}/.gcloud/storage"
-
     - name: backup the db folder of the failed instance to Google Compute Storage for later inspection
-      command: "cp /var/lib/postgresql/9.6/main {{ ansible_env.HOME }}/.gcloud/storage/<[ replica.hostname ]>-{{ ansible_date_time.epoch }}"
+      command: "gsutil -m cp -r /var/lib/postgresql/9.6/main gs://<[ gcs_bucket ]>/<[ replica.hostname ]>-{{ ansible_date_time.epoch }}"
       become: true
       become_method: sudo
-
-    - name: unmount the sqldump bucket
-      command: "fusermount -u {{ ansible_env.HOME }}/.gcloud/storage"
 
     - name: delete the failed master instance
       command: gcloud compute instances delete <[ replica.hostname ]>

@@ -49,10 +49,6 @@
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/config"
         dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
-    - name: copy ansible playbook files
-      copy:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/playbooks"
-        dest: "{{ lookup('env', 'HOME') }}/.dbadmin"
     - name: copy script files
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/repo/scripts"

@@ -47,7 +47,7 @@
         src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip
         dest: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
         remote_src: true
-        creates: "{{ lookup('env', 'HOME') }}/.dbadmin/bin/terraform
+        creates: "{{ lookup('env', 'HOME') }}/.dbadmin/bin/terraform"
     - name: create a service account credentials file if needed.
       command: "gcloud iam service-accounts keys create {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json --iam-account=<[ service_account ]>"
       args:

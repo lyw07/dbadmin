@@ -13,3 +13,5 @@
     - name: pause to let ssh credentials propagate
       pause:
         seconds: 30
+    - name: do some basic gcloud configuration
+      command: gcloud config set compute/zone <[ zone ]>

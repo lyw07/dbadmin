@@ -64,7 +64,7 @@ def terraform_instances_handler(args):
     _apply_template(_template_root + '/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
     _apply_template(_template_root + '/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
     _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    _apply_template_and_run_playbook('terraform_instances', {}, local=True, hosts=_script_root + '/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('terraform_instances', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.

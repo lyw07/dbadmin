@@ -196,6 +196,12 @@
         group: postgres
         mode: 0740
     
+    - name: install barman-cli used by the utility scripts
+      apt:
+        name: barman-cli
+      become: yes
+      become_method: sudo
+    
     - name: restart server
       service:
         name: postgresql

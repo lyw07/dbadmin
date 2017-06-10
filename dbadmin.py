@@ -5,8 +5,8 @@ import imp
 import os
 
 _script_root = os.path.dirname(os.path.realpath(__file__))
-_home_dir = os.path.expanduser('~')
-_template_root = _home_dir + '/.dbadmin/repo/templates'
+_working_root = os.path.expanduser('~') + '/.dbadmin'
+_template_root = _script_root + '/templates'
 
 def _as_array(val):
     return val.split()
@@ -41,8 +41,8 @@ def _run_commands(commands):
     return True
 
 def _apply_template_and_run_playbook(playbook, vars, hosts, debug=False, local=False):
-    _apply_template(_template_root + '/playbooks/' + playbook + '.yml', vars, _home_dir + '/.dbadmin/playbooks/' + playbook + '.yml')
-    _run_commands(['ansible-playbook ' + ('-vvvv -i ' if debug else '-i ') + hosts + ' ' + ('-c local ' if local else '') + _home_dir + '/.dbadmin/playbooks/' + playbook + '.yml'])
+    _apply_template(_template_root + '/playbooks/' + playbook + '.yml', vars, _working_root + '/playbooks/' + playbook + '.yml')
+    _run_commands(['ansible-playbook ' + ('-vvvv -i ' if debug else '-i ') + hosts + ' ' + ('-c local ' if local else '') + _working_root + '/playbooks/' + playbook + '.yml'])
 
 def terraform_instances_handler(args):
     # Generate the terraform variables configuration file and run terraform apply
@@ -61,9 +61,9 @@ def terraform_instances_handler(args):
             'hostname': hostname,
         })
     # Generate terraform files from templates and run terraform.
-    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
-    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
-    _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
+    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
+    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _working_root + '/terraform/output.tf')
+    _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _working_root + '/terraform/variables.tf')
     _apply_template_and_run_playbook('terraform_instances', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):
@@ -71,8 +71,8 @@ def configure_instances_handler(args):
     hosts_vars = {
         'barman': {
             'hostname': 'barman',
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate barman_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate  barman_internal_ip')).rstrip(),
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate  barman_internal_ip')).rstrip(),
         },
         'standby': [
         ],
@@ -82,8 +82,8 @@ def configure_instances_handler(args):
         hostname = args.replica_hostname_prefix + str(i+1)
         vars = {
             'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
             'index': str(i+1)
         }
         hosts_vars['replicas'].append(vars)
@@ -91,7 +91,7 @@ def configure_instances_handler(args):
             hosts_vars['master'] = vars
         else:
             hosts_vars['standby'].append(vars)
-    _apply_template(_template_root + '/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+    _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
     # Generate configuration files needed for configuring the instances.
     for replica in hosts_vars['replicas']:
@@ -103,20 +103,20 @@ def configure_instances_handler(args):
             },
             'master': hosts_vars['master'],
         }
-        host_config_dir = _home_dir + '/.dbadmin/config/' + replica['hostname']
+        host_config_dir = _working_root + '/config/' + replica['hostname']
         if not os.path.exists(host_config_dir):
             os.makedirs(host_config_dir)
-        _apply_template(_template_root + '/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
+        _apply_template(_template_root + '/config/barman/replica.conf', vars, _working_root + '/config/barman/' + replica['hostname'] + '.conf')
         _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
         _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
         _apply_template(_template_root + '/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
-        script_dir = _home_dir + '/.dbadmin/scripts'
+        script_dir = _working_root + '/scripts'
         if not os.path.exists(script_dir):
             os.makedirs(script_dir)
         _apply_template(_template_root + '/scripts/restore.py', vars, script_dir + '/restore.py')
 
     # Generate the playbook for configuring the replicas, and run it.
-    _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 def restore_database_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
@@ -130,7 +130,7 @@ def restore_database_handler(args):
                 'hostname': args.master_hostname
             }
         }
-        _apply_template_and_run_playbook('restore_database', db_import_vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+        _apply_template_and_run_playbook('restore_database', db_import_vars, hosts=_working_root + '/hosts', debug=args.debug)
     else:
         print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
@@ -145,10 +145,10 @@ def reinit_standby_handler(args):
         },
         'gcs_bucket': args.gcs_bucket,
     }
-    _apply_template_and_run_playbook('reinit_standby', vars, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('reinit_standby', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 def status_handler(args):
-    _apply_template_and_run_playbook('status', {}, hosts=_home_dir + '/.dbadmin/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('status', {}, hosts=_working_root + '/hosts', debug=args.debug)
 
 def bootstrap_handler(args):
     # Install and update pip, curl and other dependencies so that _apply_template can be run.

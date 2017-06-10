@@ -207,7 +207,7 @@ status_parser.set_defaults(handler=status_handler)
 reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed master and adds it back as a standby to the current configuration.')
 reinit_standby_parser.add_argument('--standby_hostname', required=True, help='Hostname of the failed master to be added back as a standby.')
 reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
-reinit_standby_parser.add_argument('--gcs_bucket', required=True, help='Bucket to backup the failed master\'s data directory before recreating it.')
+reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed master\'s data directory before recreating it.')
 reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')

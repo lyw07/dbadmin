@@ -42,10 +42,6 @@
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts"
         state: directory
-    - name: create the playbooks directory
-      file:
-        path: "{{ lookup('env', 'HOME') }}/.dbadmin/playbooks"
-        state: directory
     - name: download and unarchive terraform
       unarchive: 
         src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip

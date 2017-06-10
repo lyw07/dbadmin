@@ -1,4 +1,4 @@
-## dbadmin Postgres Replicated Database Administration Tool
+## dbadmin - Administration Tool For Replicated Postgres Setups
 
 The `dbadmin` tool implements playbooks to support common replicated database administration functions for Postgres, including:
 

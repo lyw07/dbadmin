@@ -244,7 +244,7 @@
     - name: clone standby
       command: >
         repmgr -h <[ master.hostname ]> -d repmgr
-        -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
+        -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf -F standby clone
       become: true
       become_user: postgres
       become_method: sudo
@@ -270,7 +270,7 @@
 
     - block:
       - name: register as standby
-        command: repmgr -f /etc/repmgr.conf standby register
+        command: repmgr -f /etc/repmgr.conf -F standby register
         when:  '"standby" not in host_replica_type.stdout'
 
       - name: start repmgrd

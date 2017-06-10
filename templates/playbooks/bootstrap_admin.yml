@@ -44,7 +44,7 @@
         state: directory
     - name: copy ip.j2
       copy:
-        src: ../ip.j2
+        src: ../../ip.j2
         dest: "{{ lookup('env', 'HOME') }}/.dbadmin/ip.j2"
     - name: download and unarchive terraform
       unarchive: 

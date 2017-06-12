@@ -190,7 +190,7 @@
     
     - name: copy utility scripts expected by repmgr.conf
       copy:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts/" # copy only contents inside
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts/{{ ansible_hostname }}/" # copy only contents inside
         dest: /usr/local/bin
         owner: postgres
         group: postgres

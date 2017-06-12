@@ -120,7 +120,7 @@ def configure_instances_handler(args):
         if not os.path.exists(script_dir):
             os.makedirs(script_dir)
         _apply_template(_template_root + '/scripts/follow.sh', {}, _working_root + '/scripts/follow.sh')
-        _apply_template(_template_root + '/scripts/promote.sh', {}, _working_root + '/scripts/promote.sh')
+        _apply_template(_template_root + '/scripts/promote.sh', vars, _working_root + '/scripts/promote.sh')
         _apply_template(_template_root + '/scripts/restore.py', vars, _working_root + '/scripts/restore.py')
 
     # Generate the playbook for configuring the replicas, and run it.
@@ -209,15 +209,18 @@ restore_database_parser.set_defaults(handler=restore_database_handler)
 restore_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 restore_database_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
 restore_database_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
-restore_database_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
+restore_database_parser.add_argument('--barman_source_server', help='The host from which to restore, as registered on Barman.')
+restore_database_parser.add_argument('--barman_backup_id', help='The backup id for the specified host. If you want to use the latest backup, use \latest\'')
+restore_database_parser.add_argument('--barman_target_time', help='The point in time to recover. Make sure this is between the begin_time and end_time of the back up specified.')
+restore_database_parser.add_argument('--sqldump_location', help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
 status_parser = subparsers.add_parser('status', help='Show the current status of the setup.')
 status_parser.set_defaults(handler=status_handler)
 
-reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed master and adds it back as a standby to the current configuration.')
-reinit_standby_parser.add_argument('--standby_hostname', required=True, help='Hostname of the failed master to be added back as a standby.')
+reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed instance and adds it back as a standby to the current configuration.')
+reinit_standby_parser.add_argument('--instance_hostname', required=True, help='Hostname of the failed instance to be added back as a standby.')
 reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
-reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed master\'s data directory before recreating it.')
+reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed instance\'s data directory before recreating it.')
 reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')

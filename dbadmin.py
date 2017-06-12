@@ -147,7 +147,7 @@ def reinit_standby_handler(args):
     # Destroy the instance and recreate it the terraform configuration files.
     vars = {
         'replica': {
-            'hostname': args.standby_hostname,
+            'hostname': args.instance_hostname,
         },
         'master': {
             'hostname': args.master_hostname,

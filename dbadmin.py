@@ -5,7 +5,8 @@ import imp
 import os
 
 _script_root = os.path.dirname(os.path.realpath(__file__))
-_home_dir = os.path.expanduser('~')
+_working_root = os.path.expanduser('~') + '/.dbadmin'
+_template_root = _script_root + '/templates'
 
 def _as_array(val):
     return val.split()
@@ -39,6 +40,10 @@ def _run_commands(commands):
             return False
     return True
 
+def _apply_template_and_run_playbook(playbook, vars, hosts, debug=False, local=False):
+    _apply_template(_template_root + '/playbooks/' + playbook + '.yml', vars, _working_root + '/playbooks/' + playbook + '.yml')
+    _run_commands(['ansible-playbook ' + ('-vvvv -i ' if debug else '-i ') + hosts + ' ' + ('-c local ' if local else '') + _working_root + '/playbooks/' + playbook + '.yml'])
+
 def terraform_instances_handler(args):
     # Generate the terraform variables configuration file and run terraform apply
     tf_vars = {
@@ -48,140 +53,111 @@ def terraform_instances_handler(args):
         'disk_type': args.disk_type,
         'disk_size': args.disk_size,
         'machine_type': args.machine_type,
-        'version_alpha': args.version == 'alpha',
-        'version_stable': args.version == 'stable',
     }
-    if tf_vars['version_stable']:
-        tf_vars['master'] = {
-            'hostname': args.master_hostname
-        }
-        tf_vars['standby'] = []
-        for i in xrange(args.num_standby):
-            hostname = args.standby_hostname_prefix + str(i+1)
-            tf_vars['standby'].append({
-                'hostname': hostname
-            })
-    if tf_vars['version_alpha']:
-        tf_vars['replicas'] = []
-        for i in xrange(args.num_replicas):
-            hostname = args.replica_hostname_prefix + str(i+1)
-            tf_vars['replicas'].append({
-                'hostname': hostname,
-            })
+    tf_vars['replicas'] = []
+    for i in xrange(args.num_replicas):
+        hostname = args.replica_hostname_prefix + str(i+1)
+        tf_vars['replicas'].append({
+            'hostname': hostname,
+        })
     # Generate terraform files from templates and run terraform.
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/main.tf', tf_vars, _home_dir + '/.dbadmin/terraform/main.tf')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/output.tf', tf_vars, _home_dir + '/.dbadmin/terraform/output.tf')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/terraform/variables.tf', tf_vars, _home_dir + '/.dbadmin/terraform/variables.tf')
-    terraform_commands = [
-        _home_dir + '/.dbadmin/bin/terraform apply --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + _home_dir + '/.dbadmin/terraform',
-        'ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/terraform_after.yml',
-    ]
-    _run_commands(terraform_commands)
+    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
+    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _working_root + '/terraform/output.tf')
+    _apply_template(_template_root + '/terraform/variables.tf', tf_vars, _working_root + '/terraform/variables.tf')
+    _apply_template_and_run_playbook('terraform_instances', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
             'hostname': 'barman',
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate barman_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate  barman_internal_ip')).rstrip(),
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate  barman_internal_ip')).rstrip(),
         },
-        'version_alpha': args.version == 'alpha',
-        'version_stable': args.version == 'stable',
         'standby': [
         ],
         'replicas': [
         ]}
-    if hosts_vars['version_stable']:
-        hosts_vars['master'] = {
-            'hostname': args.master_hostname,
-            'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + args.master_hostname + '_internal_ip')).rstrip(),
+    for i in xrange(args.num_replicas):
+        hostname = args.replica_hostname_prefix + str(i+1)
+        vars = {
+            'hostname': hostname,
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            'index': str(i+1)
         }
-        for i in xrange(args.num_standby):
-            hostname = args.standby_hostname_prefix + str(i+1)
-            hosts_vars['standby'].append({
-                'hostname': hostname,
-                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-            })
-
-    if hosts_vars['version_alpha']:
-        for i in xrange(args.num_replicas):
-            hostname = args.replica_hostname_prefix + str(i+1)
-            vars = {
-                'hostname': hostname,
-                'external_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-                'internal_ip': subprocess.check_output(_as_array(_home_dir + '/.dbadmin/bin/terraform output --state=' + _home_dir + '/.dbadmin/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-                'index': str(i+1)
-            }
-            hosts_vars['replicas'].append(vars)
-            if i == 0:
-                hosts_vars['master'] = vars
-            else:
-                hosts_vars['standby'].append(vars)
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/hosts', hosts_vars, _home_dir + '/.dbadmin/hosts')
+        hosts_vars['replicas'].append(vars)
+        if i == 0:
+            hosts_vars['master'] = vars
+        else:
+            hosts_vars['standby'].append(vars)
+    _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
     # Generate configuration files needed for configuring the instances.
-    if hosts_vars['version_alpha']:
-        hosts_vars['version_alpha'] = True
-        for replica in hosts_vars['replicas']:
-            vars = {
-                'host': replica,
-                'barman': hosts_vars['barman'],
-                'app_server': {
-                    'internal_ip': args.appserver_internalip
-                },
-                'master': hosts_vars['master'],
-            }
-            host_config_dir = _home_dir + '/.dbadmin/config/' + replica['hostname']
-            if not os.path.exists(host_config_dir):
-                os.makedirs(host_config_dir)
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/barman/replica.conf', vars, _home_dir + '/.dbadmin/config/barman/' + replica['hostname'] + '.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
+    for replica in hosts_vars['replicas']:
+        vars = {
+            'host': replica,
+            'barman': hosts_vars['barman'],
+            'app_server': {
+                'internal_ip': args.appserver_internalip
+            },
+            'master': hosts_vars['master'],
+        }
+        
+        barman_config_dir = _working_root + '/config/barman'
+        if not os.path.exists(barman_config_dir):
+            os.makedirs(barman_config_dir)
+        _apply_template(_template_root + '/config/barman/barman.conf', {}, _working_root + '/config/barman/barman.conf')
+        _apply_template(_template_root + '/config/barman/replica.conf', vars, _working_root + '/config/barman/' + replica['hostname'] + '.conf')
 
-    # Generate the necessary playbooks for configuring the replicas.
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_setup.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_setup.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/db_setup.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_after.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/standby_after.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/standby_after.yml')
-    _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/barman_standby.yml', hosts_vars, _home_dir + '/.dbadmin/playbooks/barman_standby.yml')
+        host_config_dir = _working_root + '/config/' + replica['hostname']
+        if not os.path.exists(host_config_dir):
+            os.makedirs(host_config_dir)
+        _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
+        _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
+        _apply_template(_template_root + '/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
 
-    # TODO(bharadwajs) Also decompose remaining ansible playbook YAML files to support the number of replicas requested.
-    ansible_commands = [
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/get_ip.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_setup.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/postgresql_install.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_setup.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_after.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/standby_after.yml',
-        'ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/barman_standby.yml'
-    ]
-    _run_commands(ansible_commands)
+        host_script_dir = _working_root + '/scripts/' + replica['hostname']
+        if not os.path.exists(host_script_dir):
+            os.makedirs(host_script_dir)
+        _apply_template(_template_root + '/scripts/follow.sh', {}, host_script_dir + '/follow.sh')
+        _apply_template(_template_root + '/scripts/promote.sh', vars, host_script_dir + '/promote.sh')
+        _apply_template(_template_root + '/scripts/restore.py', vars, host_script_dir + '/restore.py')
 
-def initialize_master_handler(args):
+    # Generate the playbook for configuring the replicas, and run it.
+    _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)
+
+def restore_database_handler(args):
     # Run the sql import on the master if the corresponding flags have been set.
-    import_commands = []
-    if args.database_name and args.database_user:
-        db_create_args = {
+    if args.sqldump_location and args.sqldump_location.find(':') > 0:
+        db_import_vars = {
             'dbname': args.database_name,
             'dbuser': args.database_user,
+            'db_import_bucket': args.sqldump_location.split(':')[0],
+            'db_import_path': args.sqldump_location.split(':')[1],
+            'master': {
+                'hostname': args.master_hostname
+            }
         }
-        _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_create.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_create.yml')
-        import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_create.yml')
-        if args.sqldump_location and args.sqldump_location.find(':') > 0:
-            db_create_args.update({
-                'db_import_bucket': args.sqldump_location.split(':')[0],
-                'db_import_path': args.sqldump_location.split(':')[1]
-            })
-            _apply_template(_home_dir + '/.dbadmin/repo/templates/playbooks/db_import.yml', db_create_args, _home_dir + '/.dbadmin/playbooks/db_import.yml')
-            import_commands.append('ansible-playbook -i ' + _home_dir + '/.dbadmin/hosts ' + _home_dir + '/.dbadmin/playbooks/db_import.yml')
-    _run_commands(import_commands)
+        _apply_template_and_run_playbook('restore_database', db_import_vars, hosts=_working_root + '/hosts', debug=args.debug)
+    else:
+        print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
-def add_standby_handler(args):
-    pass
+def reinit_standby_handler(args):
+    # Destroy the instance and recreate it the terraform configuration files.
+    vars = {
+        'replica': {
+            'hostname': args.instance_hostname,
+        },
+        'master': {
+            'hostname': args.master_hostname,
+        },
+        'gcs_bucket': args.gcs_bucket,
+    }
+    _apply_template_and_run_playbook('reinit_standby', vars, hosts=_working_root + '/hosts', debug=args.debug)
+
+def status_handler(args):
+    _apply_template_and_run_playbook('status', {}, hosts=_working_root + '/hosts', debug=args.debug)
 
 def bootstrap_handler(args):
     # Install and update pip, curl and other dependencies so that _apply_template can be run.
@@ -189,13 +165,15 @@ def bootstrap_handler(args):
         'sudo apt-get update',
         'sudo apt-get install -y curl python-pip build-essential libssl-dev libffi-dev python-dev',
         'sudo pip install --upgrade pip',
-        'sudo pip install ansible pystache'
+        'sudo pip install ansible pystache',
+        'mkdir -p .dbadmin/playbooks',
+        'cp ' + _script_root + '/ip.j2 .dbadmin/ip.j2'
     ]
     _run_commands(bootstrap_commands)
 
     # Generate the bootstrap playbook and run it.
-    _apply_template(_script_root + '/templates/playbooks/bootstrap_admin.yml', { 'service_account': args.iam_account }, _script_root + '/playbooks/bootstrap_admin.yml')
-    _run_commands(['ansible-playbook -i ' + _script_root + '/hosts -c local ' + _script_root + '/playbooks/bootstrap_admin.yml'])
+    vars = { 'service_account': args.iam_account }
+    _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
@@ -227,16 +205,27 @@ configure_instances_parser.add_argument('--replica_hostname_prefix', default='re
 configure_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
 configure_instances_parser.add_argument('--appserver_internalip', default=None, help='Internal IP address of the app server that will talk to the replicas.')
 
-initialize_master_parser = subparsers.add_parser('initialize-master', help='Initialize the master from a sqldump stored in a Google Compute Storage bucket.')
-initialize_master_parser.set_defaults(handler=initialize_master_handler)
-initialize_master_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
-initialize_master_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
-initialize_master_parser.add_argument('--sqldump_location', required=True, help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
+restore_database_parser = subparsers.add_parser('restore-database', help='Restores the master from a sqldump stored in a Google Compute Storage bucket.')
+restore_database_parser.set_defaults(handler=restore_database_handler)
+restore_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+restore_database_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
+restore_database_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
+restore_database_parser.add_argument('--barman_source_server', help='The host from which to restore, as registered on Barman.')
+restore_database_parser.add_argument('--barman_backup_id', help='The backup id for the specified host. If you want to use the latest backup, use \latest\'')
+restore_database_parser.add_argument('--barman_target_time', help='The point in time to recover. Make sure this is between the begin_time and end_time of the back up specified.')
+restore_database_parser.add_argument('--sqldump_location', help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
-add_standby_parser = subparsers.add_parser('add-standby', help='Adds another standby to the current configuration.')
-add_standby_parser.set_defaults(handler=add_standby_handler)
+status_parser = subparsers.add_parser('status', help='Show the current status of the setup.')
+status_parser.set_defaults(handler=status_handler)
+
+reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed instance and adds it back as a standby to the current configuration.')
+reinit_standby_parser.add_argument('--instance_hostname', required=True, help='Hostname of the failed instance to be added back as a standby.')
+reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed instance\'s data directory before recreating it.')
+reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
+parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')
 
 args = parser.parse_args()
 args.handler(args)

@@ -1,60 +1,29 @@
 # https://cloud.google.com/compute/docs/instances/connecting-to-instance
 
 barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]> ansible_become=true hostname=barman ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
-
-<[ #version_stable ]>
-
-<[ master.hostname ]> ansible_host=<[ master.external_ip ]> internal_ip=<[ master.internal_ip ]> ansible_become=true hostname=<[ master.hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
-
-<[ #standby ]>
-<[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
-<[ /standby ]>
-
-<[ /version_stable ]>
-
-<[ #version_alpha ]>
 <[ #replicas ]>
 <[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ /replicas ]>
-<[ /version_alpha ]>
+
+gateway ansible_host=127.0.0.1 internal_ip=127.0.0.1 hostname=gateway
 
 [barman]
 barman
 
-<[ #version_alpha ]>
 [replicas]
 <[ #replicas ]>
 <[ hostname ]>
 <[ /replicas ]>
-<[ /version_alpha ]>
 
 [db]
-<[ #version_stable ]>
-<[ master.hostname ]>
-<[ #standby ]>
-<[ hostname ]>
-<[ /standby ]>
-<[ /version_stable ]>
-<[ #version_alpha ]>
 <[ #replicas ]>
 <[ hostname ]>
 <[ /replicas ]>
-<[ /version_alpha ]>
 
-<[ #version_stable ]>
-<[ #standby ]>
-[<[ hostname ]>]
-<[ hostname ]>
-<[ /standby ]>
-<[ /version_stable ]>
-
-
-<[ #version_alpha ]>
 <[ #replicas ]>
 [<[ hostname ]>]
 <[ hostname ]>
 <[ /replicas ]>
-<[ /version_alpha ]>
 
 [standby]
 <[ #standby ]>
@@ -66,14 +35,6 @@ barman
 
 [all]
 barman
-<[ #version_stable ]>
-<[ master.hostname ]>
-<[ #standby ]>
-<[ hostname ]>
-<[ /standby ]>
-<[ /version_stable ]>
-<[ #version_alpha ]>
 <[ #replicas ]>
 <[ hostname ]>
 <[ /replicas ]>
-<[ /version_alpha ]>

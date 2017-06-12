@@ -1,6 +1,8 @@
 ---
 - hosts: gateway
   tasks:
+    - name: run terraform
+      command: "{{ ansible_env.HOME }}/.dbadmin/bin/terraform apply --state={{ ansible_env.HOME }}/.dbadmin/terraform.tfstate {{ ansible_env.HOME }}/.dbadmin/terraform"
     - name: run gcloud compute config-ssh to set up ssh keys
       expect:
         command: gcloud compute config-ssh
@@ -11,3 +13,5 @@
     - name: pause to let ssh credentials propagate
       pause:
         seconds: 30
+    - name: do some basic gcloud configuration
+      command: gcloud config set compute/zone <[ zone ]>

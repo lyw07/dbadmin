@@ -20,7 +20,7 @@
       become_method: sudo
     <[ /gcs_bucket ]>
 
-- hosts: gateway
+- hosts: localhost # assumes we run it on gateway
   tasks:
     - name: delete the failed master instance
       command: gcloud compute instances delete <[ replica.hostname ]>

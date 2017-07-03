@@ -175,6 +175,20 @@ def bootstrap_handler(args):
     vars = { 'service_account': args.iam_account }
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
+def fork_database_handler(args):
+    # Edit terraform configuration files to set up a standalone database instance
+    with open(_working_root + '/terraform/main.tf', 'a') as main:
+        with open(_template_root + '/terraform/forkdb_main') as infile_main:
+            main.write(infile_main.read())
+
+    with open(_working_root + '/terraform/output.tf', 'a') as output:
+        with open(_template_root + '/terraform/forkdb_output') as infile_output:
+            output.write(infile_output.read())
+
+    # Run terraform apply
+    vars = {}
+    _apply_template_and_run_playbook('fork_database', vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
+
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
 
@@ -223,6 +237,9 @@ reinit_standby_parser.add_argument('--instance_hostname', required=True, help='H
 reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed instance\'s data directory before recreating it.')
 reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
+
+fork_database_parser = subparsers.add_parser('fork-database', help='Create a testing instance that contains a snapshot of the existing database at the current time.')
+fork_database_parser.set_defaults(handler=fork_database_handler)
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')

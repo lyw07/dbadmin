@@ -76,9 +76,9 @@ To set up the tool:
  
 * After the instance is successfully built, install git using `sudo apt-get install -y git`.
 
-* Clone the backupdb project using `git clone http://github.com/bsubrama/backupdb.git --branch=gce`. This shoudl create a directory `backupdb` in your home directory containing the tool.
+* Clone the backupdb project using `git clone http://github.com/lyw07/backupdb.git --branch=gce`. This shoudl create a directory `backupdb` in your home directory containing the tool.
 
-* Run the bootstrap function using `backupdb/dbadmin.py bootstrap-admin --iam_account=<service-account>`. This should set up the `.dbadmin` directory in your home directory that will be expected by subsequent operations, and also install other dependencies. 
+* Run the bootstrap function using `backupdb/dbadmin.py bootstrap --iam_account=<service-account>`. This should set up the `.dbadmin` directory in your home directory that will be expected by subsequent operations, and also install other dependencies. 
 
 Other Notes
 ------------------------

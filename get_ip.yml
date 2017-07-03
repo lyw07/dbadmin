@@ -16,12 +16,23 @@
 
     - name: get the content inside the ip_tmp file
       shell: "cat /var/lib/ip_tmp"
-      register: ip
+      register: ips
 
     - name: put the ip addresses of all machines into hosts file
       lineinfile:
         dest: /etc/hosts
-        line: "{{ ip.stdout }}"
+        line: "{{ ips.stdout }}"
+
+    - name: copy a new haproxy config that is created for this server
+      template:
+        src: config/new_haproxyconfig.j2
+        dest: /etc/new_haproxy.cfg
+
+    - name: copy promote command script
+      template:
+        src: config/promote.j2
+        dest: /etc/promote.sh
+        mode: 0777
 
 
 

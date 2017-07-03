@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 $forwarded_ports = {}
-$num_instances = 4
+$num_instances = 6
 
 
 Vagrant.configure("2") do |config|
@@ -24,6 +24,12 @@ Vagrant.configure("2") do |config|
       if machine_id == 4
         ip = "192.168.33.12"
       end
+      if machine_id == 5
+        ip = "192.168.33.13"
+      end
+      if machine_id == 6
+        ip = "192.168.33.14"
+      end
 
       $forwarded_ports.each do |guest, host|
         config.vm.network "forwarded_port", guest: guest, host: host, auto_correct: true
@@ -31,7 +37,7 @@ Vagrant.configure("2") do |config|
       
       config.vm.provider :virtualbox do |vb|
         vb.gui = false
-        vb.memory = 1024
+        vb.memory = 512
         vb.cpus = 1
       end
 

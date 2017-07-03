@@ -6,11 +6,27 @@ machine3 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201 ansible_ssh_user='vagr
 
 machine4 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2202 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.12
 
+machine5 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2203 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.13
+
+machine6 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2204 ansible_ssh_user='vagrant' ansible_ssh_private_key_file='/Users/lingyiwang/.vagrant.d/insecure_private_key' ip=192.168.33.14
+
 [barman]
 machine1
 
 [barman:vars]
 hostname=backup
+
+[haproxy]
+machine5
+
+[haproxy:vars]
+hostname=haproxy
+
+[client]
+machine6
+
+[client:vars]
+hostname=client
 
 [db]
 machine2
@@ -44,3 +60,5 @@ machine1
 machine2
 machine3
 machine4
+machine5
+machine6

@@ -1,0 +1,22 @@
+---
+- hosts: client
+  tasks:
+    - name: add source repository into source list
+      apt_repository:
+        repo: deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main
+        state: present
+        filename: '/etc/apt/sources.list.d/pgdg.list'
+
+    - name: import the repository signing key
+      apt_key:
+        url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        state: present
+
+    - name: update the package lists
+      apt: 
+        update_cache: yes
+
+    - name: install postgresql-9.6
+      apt:
+        name: postgresql-9.6
+        

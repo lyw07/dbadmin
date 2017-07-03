@@ -15,7 +15,7 @@
       template:
         src: config/master/repmgr.j2
         dest: /etc/repmgr.conf
- 
+
     - block: 
       - name: generate ssh keys
         expect: 
@@ -34,6 +34,11 @@
         lineinfile:
           dest: /var/lib/postgresql/.ssh/config
           line: "Host {{ hostvars[groups['barman'][0]]['hostname'] }}"
+
+      - name: add user to config
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: 'User barman'
 
       - name: ignore ssh host key checking
         lineinfile:
@@ -86,6 +91,7 @@
       template:
         src: config/standby/standby_one/repmgr.j2
         dest: /etc/repmgr.conf
+
 
 - hosts: standby2
   tasks:

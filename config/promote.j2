@@ -1,0 +1,22 @@
+#!/bin/sh
+set -u
+set -e
+
+# 1. promote this node from standby to master
+echo "Promoting this standby as a new master..." >> /var/log/postgresql/postgresql-9.6-main.log 
+repmgr standby promote -f /etc/repmgr.conf --log-to-file
+
+# 2. change haproxy setting
+echo "Copying haproxy configuration to haproxy server..." >> /var/log/postgresql/postgresql-9.6-main.log 
+scp -o "StrictHostKeyChecking no" /etc/new_haproxy.cfg root@{{ hostvars[groups['haproxy'][0]]['hostname'] }}:/etc/haproxy/haproxy.cfg
+
+# 3. restart haproxy
+echo "Restarting haproxy..." >> /var/log/postgresql/postgresql-9.6-main.log 
+ssh -o "StrictHostKeyChecking no" root@{{ hostvars[groups['haproxy'][0]]['hostname'] }} service haproxy reload
+
+# 4. backup database in barman
+echo "Backup current server's database at barman server..." >> /var/log/postgresql/postgresql-9.6-main.log 
+ssh barman@{{ hostvars[groups['barman'][0]]['hostname'] }} barman backup {{ hostname }}
+
+
+echo "Standby promoted as a new master."

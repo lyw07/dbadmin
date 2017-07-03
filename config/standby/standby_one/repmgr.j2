@@ -186,7 +186,7 @@ master_response_timeout=5
 # Number of attempts at what interval (in seconds) to try and
 # connect to  a server to establish its status (e.g. master
 # during failover)
-reconnect_attempts=2
+reconnect_attempts=1
 reconnect_interval=5
 
 # Autofailover options
@@ -202,7 +202,7 @@ failover=automatic    # one of 'automatic', 'manual' (default: manual)
                     # a value of zero or less prevents the node being promoted to primary
                     # (default: 100)
 
-promote_command='repmgr standby promote -f /etc/repmgr.conf --log-to-file'
+promote_command='sh /etc/promote.sh'
 follow_command='repmgr standby follow -f /etc/repmgr.conf --log-to-file'
 
 

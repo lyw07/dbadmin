@@ -176,18 +176,53 @@ def bootstrap_handler(args):
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
 def fork_database_handler(args):
-    # Edit terraform configuration files to set up a standalone database instance
-    with open(_working_root + '/terraform/main.tf', 'a') as main:
-        with open(_template_root + '/terraform/forkdb_main') as infile_main:
-            main.write(infile_main.read())
+    # Generate the terraform variables configuration file and run terraform apply
+    tf_vars = {}
+    tf_vars['test'] = []
+    tf_vars['test'].append({
+        'hostname': 'testing',
+    })
+    # Generate terraform files from templates and run terraform.
+    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
+    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _working_root + '/terraform/output.tf')
+    _apply_template_and_run_playbook('fork_database', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
-    with open(_working_root + '/terraform/output.tf', 'a') as output:
-        with open(_template_root + '/terraform/forkdb_output') as infile_output:
-            output.write(infile_output.read())
+    # Generate the hosts file from the output of the terraform step.
+    hosts_vars = {
+        'barman': {
+            'hostname': 'barman',
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
+        },
+        'standby': [
+        ],
+        'replicas': [
+        ],
+        'test': [
+            'hostname': 'testing',
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_internal_ip')).rstrip(),
+        ]}
+    for i in xrange(args.num_replicas):
+        hostname = args.replica_hostname_prefix + str(i+1)
+        vars = {
+            'hostname': hostname,
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            'index': str(i+1)
+        }
+        hosts_vars['replicas'].append(vars)
+        if i == 0:
+            hosts_vars['master'] = vars
+        else:
+            hosts_vars['standby'].append(vars)
+    _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
-    # Run terraform apply
-    vars = {}
-    _apply_template_and_run_playbook('fork_database', vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
+    # Generate configuration files needed for configuring the instances.
+
+
+    # Generate the playbook for configuring the replicas, and run it.
+    #_apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')

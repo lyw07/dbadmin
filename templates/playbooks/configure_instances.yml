@@ -1,6 +1,6 @@
 ---
 # Base configuration. Install dependencies and configure hosts. 
-- hosts: all
+- hosts: db-cluster
   tasks:
     - name: add gcsfuse to apt sources list
       apt_repository:

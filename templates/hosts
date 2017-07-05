@@ -1,9 +1,10 @@
-# https://cloud.google.com/compute/docs/instances/connecting-to-instance
-
 barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]> ansible_become=true hostname=barman ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ #replicas ]>
 <[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ /replicas ]>
+<[ #test ]>
+<[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
+<[ /test ]>
 
 gateway ansible_host=127.0.0.1 internal_ip=127.0.0.1 hostname=gateway
 
@@ -33,8 +34,14 @@ barman
 [master]
 <[ master.hostname ]>
 
-[all]
+[test]
+<[ #test ]>
+<[ hostname ]>
+<[ /test ]>
+
+[db-cluster]
 barman
 <[ #replicas ]>
 <[ hostname ]>
 <[ /replicas ]>
+

@@ -48,6 +48,29 @@ resource "google_compute_instance" "<[ hostname ]>" {
 }
 <[ /replicas ]>
 
+<[ #test ]>
+// create <[ hostname ]> instance
+resource "google_compute_instance" "<[ hostname ]>" {
+  name = "<[ hostname ]>"
+  zone = "${var.zone}"
+  machine_type = "${var.machine_type}"
+  
+  disk {
+    image = "debian-8-jessie-v20170426"
+    type = "${var.disk_type}"
+    size = "${var.disk_size}"
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      nat_ip =""
+    }
+  } 
+}
+<[ /test ]>
+
 resource "google_compute_instance_group" "cluster" {
   name = "postgres-cluster"
   description = "Cluster containing db management instance and replicas"

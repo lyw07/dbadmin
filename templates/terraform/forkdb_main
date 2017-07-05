@@ -1,0 +1,18 @@
+resource "google_compute_instance" "testing" {
+  name = "testing"
+  zone = "${var.zone}"
+  machine_type = "${var.machine_type}"
+  disk {
+    image = "debian-8-jessie-v20170426"
+    type = "pd-standard"
+    size = "${var.disk_size}"
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      nat_ip =""
+    }
+  }
+}

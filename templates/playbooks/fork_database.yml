@@ -1,9 +1,4 @@
 ---
-- hosts: gateway
-  tasks:
-    - name: run terraform
-      command: "{{ ansible_env.HOME }}/.dbadmin/bin/terraform apply --state={{ ansible_env.HOME }}/.dbadmin/terraform.tfstate {{ ansible_env.HOME }}/.dbadmin/terraform"
-
 - hosts: test
   tasks:
     - name: add gcsfuse to apt sources list
@@ -110,6 +105,9 @@
     - name: get the current time
       command: date  --rfc-3339=seconds
       register: current_time
+
+    - debug:
+        msg: 'id is {{backup_id.stdout}} and time is {{current_time.stdout}}'
 
     - name: create a snapshot of current master's data
       command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh postgres@{{ internal_ip }}” <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/

@@ -176,16 +176,18 @@ def bootstrap_handler(args):
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
 def fork_database_handler(args):
-    # Generate the terraform variables configuration file and run terraform apply
+    # Edit terraform configuration files to set up a standalone database instance
+    with open(_working_root + '/terraform/main.tf', 'a') as main:
+        with open(_template_root + '/terraform/forkdb_main') as infile_main:
+            main.write(infile_main.read())
+
+    with open(_working_root + '/terraform/output.tf', 'a') as output:
+        with open(_template_root + '/terraform/forkdb_output') as infile_output:
+            output.write(infile_output.read())
+
+    # Run terraform apply
     tf_vars = {}
-    tf_vars['test'] = []
-    tf_vars['test'].append({
-        'hostname': 'testing',
-    })
-    # Generate terraform files from templates and run terraform.
-    _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
-    _apply_template(_template_root + '/terraform/output.tf', tf_vars, _working_root + '/terraform/output.tf')
-    _apply_template_and_run_playbook('fork_database', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
+    _apply_template_and_run_playbook('terraform_testdb', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
 
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
@@ -219,10 +221,16 @@ def fork_database_handler(args):
     _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
     # Generate configuration files needed for configuring the instances.
-
-
-    # Generate the playbook for configuring the replicas, and run it.
-    #_apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)
+    vars = {
+        'barman': {
+            'hostname': 'barman',
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
+        },
+        'master': {
+            'hostname': args.master_hostname,
+        }
+    }
+    _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
@@ -239,7 +247,7 @@ terraform_instances_parser.add_argument('--region', required=True, help='The GCE
 terraform_instances_parser.add_argument('--disk_type', required=True, choices=['pd-ssd', 'pd-standard', 'local-ssd'], help='The type of the disk.')
 terraform_instances_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_instances_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
-terraform_instances_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+terraform_instances_parser.add_argument('--master_hostname', default='replica1', help='Host name for the master.')
 terraform_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
@@ -247,7 +255,7 @@ terraform_instances_parser.add_argument('--num_replicas', default=0, type=int, h
 
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 configure_instances_parser.set_defaults(handler=configure_instances_handler)
-configure_instances_parser.add_argument('--master_hostname', default='master', help='Host name for the master.')
+configure_instances_parser.add_argument('--master_hostname', default='replica1', help='Host name for the master.')
 configure_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 configure_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 configure_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
@@ -275,6 +283,9 @@ reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 
 fork_database_parser = subparsers.add_parser('fork-database', help='Create a testing instance that contains a snapshot of the existing database at the current time.')
 fork_database_parser.set_defaults(handler=fork_database_handler)
+fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
+fork_database_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')

@@ -1,53 +1,66 @@
 ---
 - hosts: gateway
   tasks:
-    - name: add gcsfuse to apt sources list
-      shell:  echo "deb http://packages.cloud.google.com/apt gcsfuse-`lsb_release -c -s` main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
-    - name: add google cloud apt-key to apt-keys list
-      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-    - name: update apt cache
-      shell: apt-get update
-      become: yes
+    - block: 
+      - name: add gcsfuse to apt sources list
+        apt_repository:
+          repo: deb http://packages.cloud.google.com/apt gcsfuse-jessie main
+          state: present
+          filename: /etc/apt/sources.list.d/gcsfuse.list
+      
+      - name: add google cloud apt-key to apt-keys list
+        apt_key:
+          url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+          state: present
+
+      - name: update apt cache
+        apt:
+          update_cache: yes
+      
+      - name: install gcsfuse unzip
+        apt:
+          name: "{{ item }}"
+        with_items:
+          - gcsfuse
+          - unzip
+      
+      - name: install pystache terraform psycopg2
+        pip: 
+          name: "{{ item }}"
+        with_items:
+          - pexpect
+          - pystache
+          - psycopg2
+      become: true
       become_method: sudo
-    - name: install gcsfuse unzip
-      apt:
-        name: "{{ item }}"
-      with_items:
-        - gcsfuse
-        - unzip
-      become: yes
-      become_method: sudo
-    - name: install pystache terraform psycopg2
-      pip: 
-        name: "{{ item }}"
-      with_items:
-        - pexpect
-        - pystache
-        - psycopg2
-      become: yes
-      become_method: sudo
+    
     - name: create the bin directory
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
         state: directory
+    
     - name: create the terraform directory
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/terraform"
         state: directory
+    
     - name: create the config directory
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/config"
         state: directory
+    
     - name: create the scripts directory
       file:
         path: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts"
         state: directory
+    
     - name: download and unarchive terraform
       unarchive: 
         src: https://releases.hashicorp.com/terraform/0.9.6/terraform_0.9.6_linux_amd64.zip
         dest: "{{ lookup('env', 'HOME') }}/.dbadmin/bin"
         remote_src: true
         creates: "{{ lookup('env', 'HOME') }}/.dbadmin/bin/terraform"
+    
     - name: create a service account credentials file if needed.
       command: "gcloud iam service-accounts keys create {{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json --iam-account=<[ service_account ]>"
       args:

@@ -1,0 +1,293 @@
+---
+- hosts: <[ replica.hostname ]>
+  tasks:
+    - name: create a .gcloud directory readable only by root.
+      file:
+        name: "{{ ansible_env.HOME }}/.gcloud"
+        state: directory
+
+    - name: copy service account credentials to master
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.gcloud/admin-keys.json"
+        dest: "{{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+    
+    - name: activate service account on the master
+      command: "gcloud auth activate-service-account --key-file={{ ansible_env.HOME }}/.gcloud/admin-keys.json"
+    <[ #gcs_bucket ]>
+    - name: backup data folder of the failed instance to GCS for later inspection (warning, this can take a while, depending upon the data size.)
+      command: "gsutil -m cp -r /var/lib/postgresql/9.6/main gs://<[ gcs_bucket ]>/<[ replica.hostname ]>-{{ ansible_date_time.epoch }}"
+      become: true
+      become_method: sudo
+    <[ /gcs_bucket ]>
+
+- hosts: localhost # assumes we run it on gateway
+  tasks:
+    - name: delete the failed master instance
+      command: gcloud compute instances delete <[ replica.hostname ]>
+
+# Let terraform recreate the instance for us
+- include: "{{ lookup('env', 'HOME') }}/.dbadmin/playbooks/terraform_instances.yml"
+
+# Install prerequisites for the standby.
+- hosts: <[ replica.hostname ]>
+  tasks:
+    - name: add gcsfuse to apt sources list
+      apt_repository:
+        repo: deb http://packages.cloud.google.com/apt gcsfuse-jessie main
+        state: present
+        filename: /etc/apt/sources.list.d/gcsfuse.list
+
+    - name: import the repository signing key
+      apt_key:
+        url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+        state: present
+
+    - name: add postgres repository into source list
+      apt_repository:
+        repo: deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main
+        state: present
+        filename: '/etc/apt/sources.list.d/pgdg.list'
+
+    - name: import the repository signing key
+      apt_key:
+        url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        state: present
+
+    - name: install prerequisites
+      apt:
+        update_cache: yes
+        name: "{{ item }}"
+      with_items: 
+        - dbus
+        - rsync
+        - gcsfuse
+        - unzip
+        - postgresql-9.6
+        - postgresql-server-dev-9.6
+        - repmgr 
+        - python-pip 
+        - python-dev 
+        - build-essential 
+        - libssl-dev 
+        - libffi-dev
+    
+    - name: install python modules
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - pexpect
+        - psycopg2
+
+    - name: add new hostname in /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '127.0.0.1 {{ hostname }} {{ hostname }}' 
+
+    - template: 
+        src: ../ip.j2
+        dest: /var/lib/ip_tmp
+
+    - name: get the content inside the ip_tmp file
+      shell: "cat /var/lib/ip_tmp"
+      register: ip
+
+    - name: put the ip addresses of all machines into hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: "{{ ip.stdout }}"
+
+# We assume barman is already up and running. So just need to generate and
+# add this standby's configuration into barman.d, and take barman's ssh key
+# and make it available in this standby.
+- hosts: barman
+  tasks:
+    - name: copy database server <[ replica.hostname ]>'s configuration into /etc/barman.d
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ replica.hostname ]>.conf"
+        dest: /etc/barman.d/<[ replica.hostname ]>.conf
+
+    - name: fetch the public key of barman to store in the local box
+      fetch:
+        src: /var/lib/barman/.ssh/id_rsa.pub
+        dest: /tmp
+
+    - name: create incoming wal directory for <[ replica.hostname ]> server
+      file:
+        path: /var/lib/barman/<[ replica.hostname ]>/incoming
+        state: directory
+        owner: barman
+        group: barman
+        mode: 0755
+
+# Configuring the standby.
+- hosts: <[ replica.hostname ]>
+  tasks:
+    - block: 
+      - name: generate ssh keys
+        expect: 
+          command: ssh-keygen -t rsa
+          responses:
+            'Enter file in which to save the key \(/var/lib/postgresql/.ssh/id_rsa\):': "\n"
+            'Enter passphrase \(empty for no passphrase\):': "\n"
+            'Enter same passphrase again:': "\n"
+          creates: /var/lib/postgresql/.ssh/id_rsa
+      - name: create config for ssh
+        file: 
+          path: /var/lib/postgresql/.ssh/config
+          state: touch
+      - name: add barman server's ip address to config
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: "Host barman"
+      - name: add user barman to config
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: 'User barman'
+      - name: ignore ssh host key checking
+        lineinfile:
+          dest: /var/lib/postgresql/.ssh/config
+          line: 'StrictHostKeyChecking no'
+      - name: fetch the public key to store in the local box
+        fetch:
+          src: /var/lib/postgresql/.ssh/id_rsa.pub
+          dest: /tmp
+      - name: copy barman public key into authorized_keys
+        copy:
+          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
+          dest: /var/lib/postgresql/.ssh/authorized_keys
+      become: true
+      become_method: sudo
+      become_user: postgres
+
+    - name: add postgres as a sudoer
+      lineinfile:
+        dest: /etc/sudoers.d/postgres
+        line: >
+          postgres ALL=(root) NOPASSWD: /bin/systemctl start postgresql, 
+          /bin/systemctl stop postgresql, 
+          /bin/systemctl restart postgresql, 
+          /bin/systemctl reload postgresql, 
+          /usr/bin/pg_ctlcluster 9.6 main promote
+        create: yes
+        state: present
+        mode: 0600
+
+    - name: copy postgresql.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/postgresql.conf"
+        dest: /etc/postgresql/9.6/main/postgresql.conf
+
+    - name: copy pg_hba.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/pg_hba.conf"
+        dest: /etc/postgresql/9.6/main/pg_hba.conf
+
+    - name: copy repmgr.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/repmgr.conf"
+        dest: /etc/repmgr.conf
+    
+    - name: copy utility scripts expected by repmgr.conf
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/scripts/" # copy only contents inside
+        dest: /usr/local/bin
+        owner: postgres
+        group: postgres
+        mode: 0740
+    
+    - name: restart server
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: reload configuration files
+      service:
+        name: postgresql
+        state: reloaded
+
+# Back to barman - configure/copy barman ssh-keys, force backup master.
+- hosts: barman
+  become: true
+  become_method: sudo
+  become_user: barman
+  tasks:
+    - name: create config for ssh
+      file: 
+        path: /var/lib/barman/.ssh/authorized_keys
+        state: touch
+
+    - name: add <[ replica.hostname ]>'s public key into authorized_keys
+      lineinfile:
+        dest: /var/lib/barman/.ssh/authorized_keys
+        line: "{{ lookup('file', '/tmp/<[ replica.hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+
+    - name: add <[ replica.hostname ]>'s ip address to config
+      lineinfile:
+        dest: /var/lib/barman/.ssh/config
+        line: "Host <[ replica.hostname ]>"
+
+    - name: ignore ssh host key checking
+      lineinfile:
+        dest: /var/lib/barman/.ssh/config
+        line: 'StrictHostKeyChecking no'
+
+# Configure standby as standby instances on repmgr. 
+- hosts: <[ replica.hostname ]>
+  tasks:   
+    - name: stop standby server
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: remove postgresql data folder to prepare for standby clone
+      command: rm -rf /var/lib/postgresql/9.6/main
+
+    - name: clone standby
+      command: >
+        repmgr -h <[ master.hostname ]> -d repmgr
+        -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf -F standby clone
+      become: true
+      become_user: postgres
+      become_method: sudo
+
+    - name: start server
+      service:
+        name: postgresql
+        state: started
+
+    - name: reload configuration files
+      service:
+        name: postgresql
+        state: reloaded
+    
+    - name: find if host is already registered with repmgr
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_<[ master.hostname ]>.repl_nodes where conninfo like '%{{ ansible_hostname }}%') to stdout with csv;"
+      register: host_replica_type
+      ignore_errors: true
+      tags: debug
+      become: true
+      become_user: postgres
+      become_method: sudo
+
+    - block:
+      - name: register as standby
+        command: repmgr -f /etc/repmgr.conf -F standby register
+        when:  '"standby" not in host_replica_type.stdout'
+
+      - name: start repmgrd
+        shell: >
+          repmgrd -f /etc/repmgr.conf -d --verbose >> 
+          /var/log/postgresql/postgresql-9.6-main.log 2>&1
+      become: true
+      become_user: postgres
+      become_method: sudo
+
+# Prepare barman to receive wals from standbys.
+- hosts: barman
+  tasks:
+    - name: create replication slot for <[ replica.hostname ]>
+      command: barman receive-wal --create-slot <[ replica.hostname ]>
+      become: true
+      become_method: sudo
+      become_user: barman
+      ignore_errors: true

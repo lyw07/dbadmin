@@ -1,0 +1,2 @@
+# https://cloud.google.com/compute/docs/instances/connecting-to-instance
+gateway ansible_host=127.0.0.1 internal_ip=127.0.0.1 hostname=gateway

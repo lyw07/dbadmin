@@ -1,0 +1,11 @@
+---
+- hosts: barman
+  tasks:
+    - name: Servers registered on barman
+      command: barman list-server
+      register: barman_list_server
+      become: true
+      become_method: sudo
+      become_user: barman
+    - debug:
+        var: barman_list_server.stdout_lines

@@ -1,0 +1,3 @@
+{% for host in groups['all'] -%}
+   {{ hostvars[host]['internal_ip'] ~ " " ~ hostvars[host]['hostname'] ~ "\n" }} 
+{%- endfor %}

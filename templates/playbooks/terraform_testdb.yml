@@ -1,5 +1,0 @@
----
-- hosts: gateway
-  tasks:
-    - name: run terraform
-      command: "{{ ansible_env.HOME }}/.dbadmin/bin/terraform apply --state={{ ansible_env.HOME }}/.dbadmin/terraform.tfstate {{ ansible_env.HOME }}/.dbadmin/terraform"

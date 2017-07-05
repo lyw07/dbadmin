@@ -60,6 +60,11 @@ def terraform_instances_handler(args):
         tf_vars['replicas'].append({
             'hostname': hostname,
         })
+    tf_vars['test'] = []
+    if args.testing == True:
+        tf_vars['test'].append({
+            'hostname': 'testing',
+        })
     # Generate terraform files from templates and run terraform.
     _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
     _apply_template(_template_root + '/terraform/output.tf', tf_vars, _working_root + '/terraform/output.tf')
@@ -176,19 +181,6 @@ def bootstrap_handler(args):
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
 def fork_database_handler(args):
-    # Edit terraform configuration files to set up a standalone database instance
-    with open(_working_root + '/terraform/main.tf', 'a') as main:
-        with open(_template_root + '/terraform/forkdb_main') as infile_main:
-            main.write(infile_main.read())
-
-    with open(_working_root + '/terraform/output.tf', 'a') as output:
-        with open(_template_root + '/terraform/forkdb_output') as infile_output:
-            output.write(infile_output.read())
-
-    # Run terraform apply
-    tf_vars = {}
-    _apply_template_and_run_playbook('terraform_testdb', tf_vars, local=True, hosts=_script_root + '/hosts', debug=args.debug)
-
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
@@ -252,6 +244,7 @@ terraform_instances_parser.add_argument('--standby_hostname_prefix', default='st
 terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 terraform_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
+terraform_instances_parser.add_argument('--testing', default=False, type=bool, help='Whether setting up a testing server.')
 
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 configure_instances_parser.set_defaults(handler=configure_instances_handler)

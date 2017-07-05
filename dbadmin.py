@@ -198,11 +198,11 @@ def fork_database_handler(args):
         ],
         'replicas': [
         ],
-        'test': [
+        'test': {
             'hostname': 'testing',
             'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_external_ip')).rstrip(),
             'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_internal_ip')).rstrip(),
-        ]}
+        }}
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
         vars = {

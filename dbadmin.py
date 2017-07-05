@@ -220,6 +220,9 @@ def fork_database_handler(args):
         },
         'master': {
             'hostname': args.master_hostname,
+        },
+        'testing': {
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_internal_ip')).rstrip(),
         }
     }
     _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)
@@ -243,7 +246,7 @@ terraform_instances_parser.add_argument('--master_hostname', default='replica1',
 terraform_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
-terraform_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
+terraform_instances_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 terraform_instances_parser.add_argument('--testing', default=False, type=bool, help='Whether setting up a testing server.')
 
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
@@ -252,7 +255,7 @@ configure_instances_parser.add_argument('--master_hostname', default='replica1',
 configure_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 configure_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 configure_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
-configure_instances_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
+configure_instances_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 configure_instances_parser.add_argument('--appserver_internalip', default=None, help='Internal IP address of the app server that will talk to the replicas.')
 
 restore_database_parser = subparsers.add_parser('restore-database', help='Restores the master from a sqldump stored in a Google Compute Storage bucket.')
@@ -278,7 +281,7 @@ fork_database_parser = subparsers.add_parser('fork-database', help='Create a tes
 fork_database_parser.set_defaults(handler=fork_database_handler)
 fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
-fork_database_parser.add_argument('--num_replicas', default=0, type=int, help='Number of replicas.')
+fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')

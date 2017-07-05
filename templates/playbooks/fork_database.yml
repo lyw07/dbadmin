@@ -98,19 +98,19 @@
 
 - hosts: barman
   tasks:
+    - name: backup master for the latest data
+      command: barman backup <[ master.hostname ]>
+
     - name: get the backup id of the current master in barman
-      shell: barman list-backup <[ master.hostname ]> | cut -d ' ' -f2
+      shell: barman list-backup <[ master.hostname ]> | cut -d ' ' -f2 | head -1
       register: backup_id
 
     - name: get the current time
       command: date  --rfc-3339=seconds
       register: current_time
 
-    - debug:
-        msg: 'id is {{backup_id.stdout}} and time is {{current_time.stdout}}'
-
     - name: create a snapshot of current master's data
-      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh postgres@{{ internal_ip }}” <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
+      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh postgres@<[ testing.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
 
 - hosts: test
   tasks:

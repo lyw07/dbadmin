@@ -306,6 +306,8 @@ status_parser.set_defaults(handler=status_handler)
 reinit_standby_parser = subparsers.add_parser('reinit-standby', help='Brings down a failed instance and adds it back as a standby to the current configuration.')
 reinit_standby_parser.add_argument('--instance_hostname', required=True, help='Hostname of the failed instance to be added back as a standby.')
 reinit_standby_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
+fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
+fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 reinit_standby_parser.add_argument('--gcs_bucket', help='Optional bucket to backup the failed instance\'s data directory before recreating it.')
 reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 

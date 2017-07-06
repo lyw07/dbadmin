@@ -211,6 +211,15 @@ def bootstrap_handler(args):
     _apply_template_and_run_playbook('bootstrap_admin', vars, _script_root + '/hosts', debug=args.debug, local=True)
 
 def fork_database_handler(args):
+    # Get the external_ip and internal_ip if the testing server is created through terraform
+    if args.testing_terraformed == True:
+        external = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_external_ip')).rstrip()
+        internal = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_internal_ip')).rstrip()
+    # Get the external_ip and internal_ip if the testing server is set up manually
+    else:
+        external = args.testing_external_ip
+        internal = args.testing_internal_ip
+
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
@@ -224,8 +233,8 @@ def fork_database_handler(args):
         ],
         'test': {
             'hostname': args.testing_hostname,
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_internal_ip')).rstrip(),
+            'external_ip': external,
+            'internal_ip': internal,
         }}
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
@@ -252,7 +261,7 @@ def fork_database_handler(args):
             'hostname': args.master_hostname,
         },
         'testing': {
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_internal_ip')).rstrip(),
+            'internal_ip': internal,
         }
     }
     _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)
@@ -315,6 +324,9 @@ fork_database_parser.set_defaults(handler=fork_database_handler)
 fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 fork_database_parser.add_argument('--testing_hostname', required=True, help='Hostname of the testing server.')
+fork_database_parser.add_argument('--testing_terraformed', required=True, type=bool, help='Whether or not the testing instance is set up by terraform.')
+fork_database_parser.add_argument('--testing_external_ip', help='External ip address of the testing server if not set up by terraform.')
+fork_database_parser.add_argument('--testing_internal_ip', help='Internal ip address of the testing server if not set up by terraform.')
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 
 

@@ -281,8 +281,10 @@ reinit_standby_parser.set_defaults(handler=reinit_standby_handler)
 fork_database_parser = subparsers.add_parser('fork-database', help='Create a testing instance that contains a snapshot of the existing database at the current time.')
 fork_database_parser.set_defaults(handler=fork_database_handler)
 fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
-fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
+fork_database_parser.add_argument('--testing_hostname', required=True, help='Hostname of the testing server.')
+fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
+
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')

@@ -206,7 +206,7 @@ def fork_database_handler(args):
             'index': str(i+1)
         }
         hosts_vars['replicas'].append(vars)
-        if i == int(args.master_hostname.rstrip()[-1]):
+        if i == int(args.master_hostname.rstrip()[-1])-1:
             hosts_vars['master'] = vars
         else:
             hosts_vars['standby'].append(vars)

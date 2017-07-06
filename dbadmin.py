@@ -127,7 +127,6 @@ def configure_instances_handler(args):
             os.makedirs(host_script_dir)
         _apply_template(_template_root + '/scripts/follow.sh', {}, host_script_dir + '/follow.sh')
         _apply_template(_template_root + '/scripts/promote.sh', vars, host_script_dir + '/promote.sh')
-        _apply_template(_template_root + '/scripts/restore.py', vars, host_script_dir + '/restore.py')
 
     # Generate the playbook for configuring the replicas, and run it.
     _apply_template_and_run_playbook('configure_instances', hosts_vars, hosts=_working_root + '/hosts', debug=args.debug)

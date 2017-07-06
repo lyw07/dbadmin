@@ -212,7 +212,9 @@
         state: stopped
 
     - name: remove postgresql data folder to prepare for standby clone
-      command: rm -rf /var/lib/postgresql/9.6/main
+      file: 
+        path: /var/lib/postgresql/9.6/main
+        state: absent
 
     - name: clone standby
       command: >

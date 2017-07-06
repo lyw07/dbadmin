@@ -149,6 +149,18 @@ def restore_database_handler(args):
         print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
 def reinit_standby_handler(args):
+    # Destroy the instance and recreate it the terraform configuration files.
+    vars = {
+        'replica': {
+            'hostname': args.instance_hostname,
+        },
+        'master': {
+            'hostname': args.master_hostname,
+        },
+        'gcs_bucket': args.gcs_bucket,
+    }
+    _apply_template_and_run_playbook('recreate_instance', vars, hosts=_working_root + '/hosts', debug=args.debug)
+
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
@@ -177,16 +189,7 @@ def reinit_standby_handler(args):
             hosts_vars['standby'].append(vars)
     _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
-    # Destroy the instance and recreate it the terraform configuration files.
-    vars = {
-        'replica': {
-            'hostname': args.instance_hostname,
-        },
-        'master': {
-            'hostname': args.master_hostname,
-        },
-        'gcs_bucket': args.gcs_bucket,
-    }
+    # Configure the new instance to make it be a standby
     _apply_template_and_run_playbook('reinit_standby', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 def status_handler(args):

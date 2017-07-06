@@ -149,6 +149,34 @@ def restore_database_handler(args):
         print('Location of sqldump on Google Cloud Storage for initializing the database must be in the form [storage-bucket]:[path/to/sql/file].')
 
 def reinit_standby_handler(args):
+    # Generate the hosts file from the output of the terraform step.
+    hosts_vars = {
+        'barman': {
+            'hostname': 'barman',
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
+        },
+        'standby': [
+        ],
+        'replicas': [
+        ],
+        'test': [
+        ]}
+    for i in xrange(args.num_replicas):
+        hostname = args.replica_hostname_prefix + str(i+1)
+        vars = {
+            'hostname': hostname,
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+            'index': str(i+1)
+        }
+        hosts_vars['replicas'].append(vars)
+        if i == int(args.master_hostname.rstrip()[-1])-1:
+            hosts_vars['master'] = vars
+        else:
+            hosts_vars['standby'].append(vars)
+    _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
+
     # Destroy the instance and recreate it the terraform configuration files.
     vars = {
         'replica': {
@@ -159,9 +187,6 @@ def reinit_standby_handler(args):
         },
         'gcs_bucket': args.gcs_bucket,
     }
-    _apply_template(_template_root + '/scripts/follow.sh', {}, host_script_dir + '/follow.sh')
-    _apply_template(_template_root + '/scripts/promote.sh', vars, host_script_dir + '/promote.sh')
-    _apply_template(_template_root + '/scripts/restore.py', vars, host_script_dir + '/restore.py')
     _apply_template_and_run_playbook('reinit_standby', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 def status_handler(args):

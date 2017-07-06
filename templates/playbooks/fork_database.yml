@@ -90,7 +90,7 @@
       shell: barman list-backup <[ master.hostname ]> | cut -d ' ' -f2 | head -1
       register: backup_id
 
-    - name: pause to let ssh credentials propagate
+    - name: pause to wait for barman's backup command
       pause:
         seconds: 30
 

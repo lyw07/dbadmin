@@ -63,7 +63,7 @@ def terraform_instances_handler(args):
     tf_vars['test'] = []
     if args.testing == True:
         tf_vars['test'].append({
-            'hostname': 'testing',
+            'hostname': args.testing_hostname,
         })
     # Generate terraform files from templates and run terraform.
     _apply_template(_template_root + '/terraform/main.tf', tf_vars, _working_root + '/terraform/main.tf')
@@ -193,9 +193,9 @@ def fork_database_handler(args):
         'replicas': [
         ],
         'test': {
-            'hostname': 'testing',
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_internal_ip')).rstrip(),
+            'hostname': args.testing_hostname,
+            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_external_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_internal_ip')).rstrip(),
         }}
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
@@ -222,7 +222,7 @@ def fork_database_handler(args):
             'hostname': args.master_hostname,
         },
         'testing': {
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate testing_internal_ip')).rstrip(),
+            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.testing_hostname + '_internal_ip')).rstrip(),
         }
     }
     _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)
@@ -248,6 +248,7 @@ terraform_instances_parser.add_argument('--num_standby', default=2, type=int, he
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 terraform_instances_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 terraform_instances_parser.add_argument('--testing', default=False, type=bool, help='Whether setting up a testing server.')
+terraform_instances_parser.add_argument('--testing_hostname', default='testing', help='Hostname for the testing server.')
 
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 configure_instances_parser.set_defaults(handler=configure_instances_handler)

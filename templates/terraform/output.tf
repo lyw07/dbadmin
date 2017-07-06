@@ -17,10 +17,10 @@ output "<[ hostname ]>_external_ip" {
 <[ /replicas ]>
 
 <[ #test ]>
-output "testing_internal_ip" {
-    value = "${google_compute_instance.testing.*.network_interface.0.address}"
+output "<[ hostname ]>_internal_ip" {
+    value = "${google_compute_instance.<[ hostname ]>.*.network_interface.0.address}"
 }
-output "testing_external_ip" {
-    value = "${google_compute_instance.testing.*.network_interface.0.access_config.0.assigned_nat_ip}"
+output "<[ hostname ]>_external_ip" {
+    value = "${google_compute_instance.<[ hostname ]>.*.network_interface.0.access_config.0.assigned_nat_ip}"
 }
 <[ /test ]>

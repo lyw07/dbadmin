@@ -160,8 +160,8 @@ def reinit_standby_handler(args):
         'gcs_bucket': args.gcs_bucket,
     }
     _apply_template(_template_root + '/scripts/follow.sh', {}, host_script_dir + '/follow.sh')
-        _apply_template(_template_root + '/scripts/promote.sh', vars, host_script_dir + '/promote.sh')
-        _apply_template(_template_root + '/scripts/restore.py', vars, host_script_dir + '/restore.py')
+    _apply_template(_template_root + '/scripts/promote.sh', vars, host_script_dir + '/promote.sh')
+    _apply_template(_template_root + '/scripts/restore.py', vars, host_script_dir + '/restore.py')
     _apply_template_and_run_playbook('reinit_standby', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
 def status_handler(args):

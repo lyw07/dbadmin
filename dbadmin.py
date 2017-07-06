@@ -176,17 +176,17 @@ def reinit_standby_handler(args):
         ]}
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
-        vars = {
+        tmp_vars = {
             'hostname': hostname,
             'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
             'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
             'index': str(i+1)
         }
-        hosts_vars['replicas'].append(vars)
+        hosts_vars['replicas'].append(tmp_vars)
         if i == int(args.master_hostname.rstrip()[-1])-1:
-            hosts_vars['master'] = vars
+            hosts_vars['master'] = tmp_vars
         else:
-            hosts_vars['standby'].append(vars)
+            hosts_vars['standby'].append(tmp_vars)
     _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
     # Configure the new instance to make it be a standby

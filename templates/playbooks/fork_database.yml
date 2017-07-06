@@ -83,16 +83,6 @@
 
 - hosts: barman
   tasks:
-    - name: add testing server's ip address to config
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: "Host <[ testing.internal_ip ]>"
-
-    - name: ignore ssh host key checking
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: 'StrictHostKeyChecking no'
-
     - name: backup master for the latest data
       command: barman backup <[ master.hostname ]>
 
@@ -100,12 +90,16 @@
       shell: barman list-backup <[ master.hostname ]> | cut -d ' ' -f2 | head -1
       register: backup_id
 
+    - name: pause to let ssh credentials propagate
+      pause:
+        seconds: 30
+
     - name: get the current time
       command: date  --rfc-3339=seconds
       register: current_time
 
     - name: create a snapshot of current master's data
-      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh postgres@<[ testing.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
+      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh -o StrictHostKeyChecking=no postgres@<[ testing.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
 
 - hosts: test
   tasks:

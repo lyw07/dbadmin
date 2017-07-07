@@ -324,14 +324,14 @@ fork_database_parser.set_defaults(handler=fork_database_handler)
 fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 fork_database_parser.add_argument('--testing_hostname', required=True, help='Hostname of the testing server.')
-fork_database_parser.add_argument('--testing_terraformed', default=True, action='store_true', help='Whether or not the testing instance is set up by terraform.')
+fork_database_parser.add_argument('--testing_terraformed', default=False, action='store_true', help='Whether or not the testing instance is set up by terraform.')
 fork_database_parser.add_argument('--testing_external_ip', help='External ip address of the testing server if not set up by terraform.')
 fork_database_parser.add_argument('--testing_internal_ip', help='Internal ip address of the testing server if not set up by terraform.')
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
-parser.add_argument('--debug', default=False, type=bool, help='Show debug info or not.')
+parser.add_argument('--debug', default=False, action='store_true', help='Show debug info or not.')
 
 args = parser.parse_args()
 args.handler(args)

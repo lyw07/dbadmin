@@ -51,7 +51,7 @@ The `terraform-instances` function terraforms instances according to the provide
 
 * To set up a testing server, please do `backupdb/dbadmin.py terraform-instances --project_id <project_id> --zone <zone> --region <region> --disk_type <disk_type> --disk_size <disk_size> --num_replicas=3 --testing --testing_hostname=<testing_server_hostname>` where <project_id>, <zone>, <region>, <disk_type>, <disk_size> and number of replicas should be the same as the values when setting up barman server and three replicas. You can run the command along with or after setting up the barman server and three replicas.
 
-> *Note*: You can also choose to set up a testing server not through `dbadmin.py terraform-instance` but directly creating on Google Cloud Platform. Please go to *dbadmin.py fork-database* to see instructions for this case.
+> *Note*: You can also choose to set up a testing server not through `dbadmin.py terraform-instance` but by directly creating on Google Cloud Platform. Please go to **dbadmin.py fork-database** to see instructions for this case.
 
 **dbadmin.py configure-instances**
 
@@ -66,8 +66,8 @@ The `configure-instances` function configures the terraformed instances by:
 
 At the end of this function, you should have a fully-functioning master-standby failover setup, and you can start using the database at this point. Note that the `configure-instances` function sets up the first replica as the master. 
 
-*Example*:
-To configure the barman server and replicas, please do `backupdb/dbadmin.py configure-instances --num_replicas=3` where the number of replicas should be the same as the one set in *dbadmin.py terraform-instances*
+*Example*: 
+To configure the barman server and replicas, please do `backupdb/dbadmin.py configure-instances --num_replicas=3` where the number of replicas should be the same as the one set in **dbadmin.py terraform-instances**.
 
 **dbadmin.py restore-database**
 
@@ -85,7 +85,7 @@ To bring up a failed master as a standby, please do `dbadmin.py reinit-standby -
 The `fork-database` function configures the testing server which is set up through *dbadmin.py terraform-instances* or directly through Google Cloud Platform. It updates the ansible inventory with values related to the testing server, installs dependecies and transfer the current master server's up-to-date data that is stored in barman to the testing server.
 
 *Example*:
-*If the testing server is set up through *dbadmin.py terraform-instances*, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --testing_hostname=<testing_server_hostname> --testing_terraformed` where the number of replicas should be the same as the value set up in terraform.
+* If the testing server is set up through **dbadmin.py terraform-instances**, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --testing_hostname=<testing_server_hostname> --testing_terraformed` where the number of replicas should be the same as the value set up in terraform.
 
 * If the testing server is set up directly through Google Cloud Platform, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --testing_hostname=<testing_server_hostname> --testing_external_ip=<testing_server_external_ip> --testing_internal_ip=<testing_server_internal_ip>`.
 

@@ -282,7 +282,7 @@ def fork_database_handler(args):
             'hostname': args.master_hostname,
         },
         'staging': {
-            'internal_ip': internal,
+            'internal_ip': staging_internal,
         }
     }
     _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)

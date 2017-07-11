@@ -213,19 +213,29 @@ def bootstrap_handler(args):
 def fork_database_handler(args):
     # Get the external_ip and internal_ip if the staging server is created through terraform
     if args.staging_terraformed == True:
-        external = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.staging_hostname + '_external_ip')).rstrip()
-        internal = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.staging_hostname + '_internal_ip')).rstrip()
+        staging_external = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.staging_hostname + '_external_ip')).rstrip()
+        staging_internal = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + args.staging_hostname + '_internal_ip')).rstrip()
     # Get the external_ip and internal_ip if the staging server is set up manually
     else:
-        external = args.staging_external_ip
-        internal = args.staging_internal_ip
+        staging_external = args.staging_external_ip
+        staging_internal = args.staging_internal_ip
+
+    # Get the external_ip and internal_ip if the barman server is created through terraform
+    if args.barman_terraformed == True:
+        barman_external = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip()
+        barman_internal = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip()
+    # Get the external_ip and the internal_ip if the barman server is set up manually
+    else:
+        barman_external = args.barman_external_ip
+        barman_internal = args.barman_internal_ip
+
 
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
         'barman': {
             'hostname': 'barman',
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
+            'external_ip': barman_external,
+            'internal_ip': barman_internal,
         },
         'standby': [
         ],
@@ -233,17 +243,28 @@ def fork_database_handler(args):
         ],
         'staging': {
             'hostname': args.staging_hostname,
-            'external_ip': external,
-            'internal_ip': internal,
+            'external_ip': staging_external,
+            'internal_ip': staging_internal,
         }}
     for i in xrange(args.num_replicas):
         hostname = args.replica_hostname_prefix + str(i+1)
-        vars = {
-            'hostname': hostname,
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
-            'index': str(i+1)
-        }
+
+        if args.replicas_terraformed == True:
+            vars = {
+                'hostname': hostname,
+                'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_external_ip')).rstrip(),
+                'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate ' + hostname + '_internal_ip')).rstrip(),
+                'index': str(i+1)
+            }
+
+        else:
+            vars = {
+                'hostname': hostname,
+                'external_ip': args.replicas_external_ip[i],
+                'internal_ip': args.replicas_internal_ip[i],
+                'index': str(i+1)
+            }
+
         hosts_vars['replicas'].append(vars)
         if i == int(args.master_hostname.rstrip()[-1])-1:
             hosts_vars['master'] = vars
@@ -324,7 +345,13 @@ fork_database_parser.set_defaults(handler=fork_database_handler)
 fork_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 fork_database_parser.add_argument('--staging_hostname', required=True, help='Hostname of the staging server.')
-fork_database_parser.add_argument('--staging_terraformed', default=False, action='store_true', help='Whether or not the staging instance is set up by terraform.')
+fork_database_parser.add_argument('--staging_terraformed', default=True, action='store_false', help='Whether or not the staging instance is set up by terraform.')
+fork_database_parser.add_argument('--barman_terraformed', default=True, action='store_false', help='Whether or not the barman instance is set up by terraform.')
+fork_database_parser.add_argument('--replicas_terraformed', default=True, action='store_false', help='Whether or not the replicas instances are set up by terraform.')
+fork_database_parser.add_argument('--barman_external_ip', help='External ip address of the barman server if not set up by terraform.')
+fork_database_parser.add_argument('--barman_internal_ip', help='Internal ip address of the barman server if not set up by terraform.')
+fork_database_parser.add_argument('--replicas_external_ip', nargs='+', help='External ip address of the replicas servers if not set up by terraform.')
+fork_database_parser.add_argument('--replicas_internal_ip', nargs='+', help='Internal ip address of the replicas servers if not set up by terraform.')
 fork_database_parser.add_argument('--staging_external_ip', help='External ip address of the staging server if not set up by terraform.')
 fork_database_parser.add_argument('--staging_internal_ip', help='Internal ip address of the staging server if not set up by terraform.')
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')

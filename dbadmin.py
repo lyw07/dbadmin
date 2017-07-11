@@ -276,7 +276,7 @@ def fork_database_handler(args):
     vars = {
         'barman': {
             'hostname': 'barman',
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
+            'internal_ip': barman_internal,
         },
         'master': {
             'hostname': args.master_hostname,

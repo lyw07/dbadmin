@@ -1,5 +1,5 @@
 ---
-- hosts: test
+- hosts: staging
   tasks:
     - name: add gcsfuse to apt sources list
       apt_repository:
@@ -76,14 +76,14 @@
       become_method: sudo
       become_user: postgres
 
-    - name: stop testing server
+    - name: stop staging server
       service:
         name: postgresql
         state: stopped
 
 - hosts: barman
   tasks:
-    - name: backup master for the latest data
+    - name: backup master for the lastest data
       command: barman backup <[ master.hostname ]>
 
     - name: get the backup id of the current master in barman
@@ -99,11 +99,11 @@
       register: current_time
 
     - name: create a snapshot of current master's data
-      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh -o StrictHostKeyChecking=no postgres@<[ testing.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
+      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh -o StrictHostKeyChecking=no postgres@<[ staging.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
 
-- hosts: test
+- hosts: staging
   tasks:
-    - name: restart testing server
+    - name: restart staging server
       service:
         name: postgresql
         state: started

@@ -6,7 +6,7 @@ The `dbadmin` tool implements playbooks to support common replicated database ad
 - Configuring Postgres failover clusters and backup using repmgr and barman
 - Restoring a master node from a sqldump
 - Safely bringing up a failed master node as a standby
-- Setting up a testing server that contains a snapshot of master server's data
+- Setting up a staging server that contains a snapshot of master server's data
 
 `dbadmin` is designed to work with Google Compute Engine only. Vagrant support is as yet untested.
 
@@ -44,14 +44,14 @@ the `templates/bootstrap_admin.yml` file using commandline flags and environment
 
 **dbadmin.py terraform-instances**
 
-The `terraform-instances` function terraforms instances according to the provided arguments that specify the region, zone, machine type, disk type, disk size and optionally the replica hostname prefix, the number of replicas and the testing server hostname. It then generates the `.dbadmin/playbooks/terraform_instances.yml` file from the `templates/terraform_instances.yml` file using commandline flags and environment variables, and executes the playbook using `ansible-playbook`. This creates the instances using the `terraform` tool, configures ssh access to them and creates a `.dbadmin/terraform.tfstate` file which would be needed by subsequent `terraform` calls to have a map of the current state of the setup. Hence it is important to keep this file safe. 
+The `terraform-instances` function terraforms instances according to the provided arguments that specify the region, zone, machine type, disk type, disk size and optionally the replica hostname prefix, the number of replicas and the staging server hostname. It then generates the `.dbadmin/playbooks/terraform_instances.yml` file from the `templates/terraform_instances.yml` file using commandline flags and environment variables, and executes the playbook using `ansible-playbook`. This creates the instances using the `terraform` tool, configures ssh access to them and creates a `.dbadmin/terraform.tfstate` file which would be needed by subsequent `terraform` calls to have a map of the current state of the setup. Hence it is important to keep this file safe. 
 
 *Example*: 
 * To set up the barman server and three replicas including one master and two standbys, please do `backupdb/dbadmin.py terraform-instances --project_id <project_id> --zone <zone> --region <region> --disk_type <disk type> --disk_size <disk size> --num_replicas=3`. 
 
-* To set up a testing server, please do `backupdb/dbadmin.py terraform-instances --project_id <project_id> --zone <zone> --region <region> --disk_type <disk_type> --disk_size <disk_size> --num_replicas=3 --testing --testing_hostname=<testing_server_hostname>` where <project_id>, <zone>, <region>, <disk_type>, <disk_size> and number of replicas should be the same as the values when setting up barman server and three replicas. You can run the command along with or after setting up the barman server and three replicas.
+* To set up a staging server, please do `backupdb/dbadmin.py terraform-instances --project_id <project_id> --zone <zone> --region <region> --disk_type <disk_type> --disk_size <disk_size> --num_replicas=3 --staging --staging_hostname=<staging_server_hostname>` where <project_id>, <zone>, <region>, <disk_type>, <disk_size> and number of replicas should be the same as the values when setting up barman server and three replicas. You can run the command along with or after setting up the barman server and three replicas.
 
-> *Note*: You can also choose to set up a testing server not through `dbadmin.py terraform-instance` but by directly creating on Google Cloud Platform. Please go to **dbadmin.py fork-database** to see instructions for this case.
+> *Note*: You can also choose to set up a staging server not through `dbadmin.py terraform-instance` but by directly creating on Google Cloud Platform. Please go to **dbadmin.py fork-database** to see instructions for this case.
 
 **dbadmin.py configure-instances**
 
@@ -82,12 +82,12 @@ To bring up a failed master as a standby, please do `dbadmin.py reinit-standby -
 
 **dbadmin.py fork-database**
 
-The `fork-database` function configures the testing server which is set up through *dbadmin.py terraform-instances* or directly through Google Cloud Platform. It updates the ansible inventory with values related to the testing server, installs dependecies and transfer the current master server's up-to-date data that is stored in barman to the testing server.
+The `fork-database` function configures the staging server which is set up through *dbadmin.py terraform-instances* or directly through Google Cloud Platform. It updates the ansible inventory with values related to the staging server, installs dependecies and transfer the current master server's up-to-date data that is stored in barman to the staging server.
 
 *Example*:
-* If the testing server is set up through **dbadmin.py terraform-instances**, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --testing_hostname=<testing_server_hostname> --testing_terraformed` where the number of replicas should be the same as the value set up in terraform.
+* If the staging server is set up through **dbadmin.py terraform-instances**, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --staging_hostname=<staging_server_hostname> --staging_terraformed` where the number of replicas should be the same as the value set up in terraform.
 
-* If the testing server is set up directly through Google Cloud Platform, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --testing_hostname=<testing_server_hostname> --testing_external_ip=<testing_server_external_ip> --testing_internal_ip=<testing_server_internal_ip>`.
+* If the staging server is set up directly through Google Cloud Platform, please do `dbadmin.py fork-database --master_hostname=<current_master_hostname> --num_replicas=<number_of_replicas> --staging_hostname=<staging_server_hostname> --staging_external_ip=<staging_server_external_ip> --staging_internal_ip=<staging_server_internal_ip>`.
 
 Get Started
 ----------------------
@@ -110,7 +110,7 @@ Other Notes
 
 * To check if the master server and the standby servers are running correctly, check the logfile in the folder `/var/log/postgresql/` to see whether standby servers get data from the master server and have **repmgrd** running.
 
-* To test an automatic **failover**, turn down the master server by using `service postgresql stop` as a **root** user so that repmgrd in the standby servers will detect it and perform a automatic failover after 15 seconds. Assuming the instances are `replica1`, `replica2` and `replica3`, and `replica1` is the current master, repmgrd will promote `replica2` to become a new master and let `replica3` follow `replica2`.
+* To staging an automatic **failover**, turn down the master server by using `service postgresql stop` as a **root** user so that repmgrd in the standby servers will detect it and perform a automatic failover after 15 seconds. Assuming the instances are `replica1`, `replica2` and `replica3`, and `replica1` is the current master, repmgrd will promote `replica2` to become a new master and let `replica3` follow `replica2`.
 	* To check if automatic failover works correctly, 
 		* log into standby server as user *postgres*
 		* run `psql`

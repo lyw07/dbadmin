@@ -48,7 +48,7 @@ resource "google_compute_instance" "<[ hostname ]>" {
 }
 <[ /replicas ]>
 
-<[ #test ]>
+<[ #staging ]>
 // create <[ hostname ]> instance
 resource "google_compute_instance" "<[ hostname ]>" {
   name = "<[ hostname ]>"
@@ -69,7 +69,7 @@ resource "google_compute_instance" "<[ hostname ]>" {
     }
   } 
 }
-<[ /test ]>
+<[ /staging ]>
 
 resource "google_compute_instance_group" "cluster" {
   name = "postgres-cluster"

@@ -2,9 +2,9 @@ barman ansible_host=<[ barman.external_ip ]> internal_ip=<[ barman.internal_ip ]
 <[ #replicas ]>
 <[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
 <[ /replicas ]>
-<[ #test ]>
+<[ #staging ]>
 <[ hostname ]> ansible_host=<[ external_ip ]> internal_ip=<[ internal_ip ]> ansible_become=true hostname=<[ hostname ]> ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_ssh_private_key_file=~/.ssh/google_compute_engine
-<[ /test ]>
+<[ /staging ]>
 
 gateway ansible_host=127.0.0.1 internal_ip=127.0.0.1 hostname=gateway
 
@@ -34,10 +34,10 @@ barman
 [master]
 <[ master.hostname ]>
 
-[test]
-<[ #test ]>
+[staging]
+<[ #staging ]>
 <[ hostname ]>
-<[ /test ]>
+<[ /staging ]>
 
 [db-cluster]
 barman

@@ -369,6 +369,7 @@ fork_database_parser.add_argument('--staging_internal_ip', help='Internal ip add
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 
 backup_master_parser = subparsers.add_parser('backup-master', help='Backup the master database\'s data on barman server.')
+backup_master_parser.set_defaults(handler=backup_master_handler)
 backup_master_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')

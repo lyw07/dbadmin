@@ -287,6 +287,18 @@ def fork_database_handler(args):
     }
     _apply_template_and_run_playbook('fork_database', vars, hosts=_working_root + '/hosts', debug=args.debug)
 
+
+# Assume this is run after barman and master are set up and the ansible inventory
+# file has been populated.
+def backup_master_handler(args):
+    # Generate playbook needed to backup master data from barman
+    vars = {
+        'master': {
+            'hostname': args.master_hostname,
+        },
+    }
+    _apply_template_and_run_playbook('backup_master', vars, hosts=_working_root + '/hosts', debug=args.debug)
+
 parser = argparse.ArgumentParser(description="LearningEquality database administration tool.")
 subparsers = parser.add_subparsers(help='Supported commands')
 
@@ -356,6 +368,7 @@ fork_database_parser.add_argument('--staging_external_ip', help='External ip add
 fork_database_parser.add_argument('--staging_internal_ip', help='Internal ip address of the staging server if not set up by terraform.')
 fork_database_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 
+backup_master_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 
 parser.add_argument('--version', default='stable', choices=['alpha', 'stable'], help='Version of dbadmin.py behavior.')
 parser.add_argument('--debug', default=False, action='store_true', help='Show debug info or not.')

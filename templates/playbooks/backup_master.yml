@@ -1,0 +1,5 @@
+---
+- hosts: barman
+  tasks:
+    - name: backup master for the lastest data
+      command: barman backup <[ master.hostname ]>

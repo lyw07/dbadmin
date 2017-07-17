@@ -96,10 +96,6 @@
     - name: backup master for the lastest data
       command: barman backup <[ master.hostname ]>
 
-    - name: get the backup id of the current master in barman
-      shell: barman list-backup <[ master.hostname ]> | cut -d ' ' -f2 | head -1
-      register: backup_id
-
     - name: pause to wait for barman's backup command
       pause:
         seconds: 30
@@ -109,7 +105,7 @@
       register: current_time
 
     - name: create a snapshot of current master's data
-      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh -o StrictHostKeyChecking=no postgres@<[ staging.internal_ip ]>" <[ master.hostname ]> {{ backup_id.stdout }} /var/lib/postgresql/9.6/main/
+      command: barman recover --target-time "{{current_time.stdout}}" --remote-ssh-command "ssh -o StrictHostKeyChecking=no postgres@<[ staging.internal_ip ]>" <[ master.hostname ]> latest /var/lib/postgresql/9.6/main/
 
 - hosts: staging
   tasks:

@@ -5,26 +5,6 @@ provider "google" {
   // credentials = "${file(var.account_file_path)}"
 }
 
-// create a new barman instance
-resource "google_compute_instance" "barman" {
-  name = "barman"
-  zone = "${var.zone}"
-  machine_type = "${var.machine_type}"
-  disk {
-    image = "debian-8-jessie-v20170426"
-    type = "pd-standard"
-    size = "${var.disk_size}"
-  }
-
-  network_interface {
-    network = "default"
-
-    access_config {
-      nat_ip =""
-    }
-  }
-}
-
 <[ #replicas ]>
 // create <[ hostname ]> instance
 resource "google_compute_instance" "<[ hostname ]>" {
@@ -33,7 +13,7 @@ resource "google_compute_instance" "<[ hostname ]>" {
   machine_type = "${var.machine_type}"
   
   disk {
-    image = "debian-8-jessie-v20170426"
+    image = "debian-8-jessie-v20171025"
     type = "${var.disk_type}"
     size = "${var.disk_size}"
   }
@@ -44,6 +24,11 @@ resource "google_compute_instance" "<[ hostname ]>" {
     access_config {
       nat_ip =""
     }
+  }
+
+  service_account {
+    email = "wal-e-backups@contentworkshop-159920.iam.gserviceaccount.com",
+    scopes = ["useraccounts-ro", "storage-rw", "logging-write", "monitoring-write", "service-management", "service-control", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/trace.append", "compute-ro"]
   } 
 }
 <[ /replicas ]>
@@ -56,7 +41,7 @@ resource "google_compute_instance" "<[ hostname ]>" {
   machine_type = "${var.machine_type}"
   
   disk {
-    image = "debian-8-jessie-v20170426"
+    image = "debian-8-jessie-v20171025"
     type = "${var.disk_type}"
     size = "${var.disk_size}"
   }
@@ -67,16 +52,20 @@ resource "google_compute_instance" "<[ hostname ]>" {
     access_config {
       nat_ip =""
     }
+  }
+
+  service_account {
+    email = "wal-e-backups@contentworkshop-159920.iam.gserviceaccount.com",
+    scopes = ["useraccounts-ro", "storage-rw", "logging-write", "monitoring-write", "service-management", "service-control", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/trace.append", "compute-ro"]
   } 
 }
 <[ /staging ]>
 
 resource "google_compute_instance_group" "cluster" {
-  name = "postgres-cluster"
+  name = "test-wale-backup-cluster"
   description = "Cluster containing db management instance and replicas"
 
   instances = [
-    "${google_compute_instance.barman.self_link}",
     <[ #replicas ]>
     "${google_compute_instance.<[ hostname ]>.self_link}",
     <[ /replicas ]>

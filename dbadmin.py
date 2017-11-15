@@ -74,11 +74,6 @@ def terraform_instances_handler(args):
 def configure_instances_handler(args):
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
-        'barman': {
-            'hostname': 'barman',
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate  barman_internal_ip')).rstrip(),
-        },
         'standby': [
         ],
         'replicas': [
@@ -102,18 +97,11 @@ def configure_instances_handler(args):
     for replica in hosts_vars['replicas']:
         vars = {
             'host': replica,
-            'barman': hosts_vars['barman'],
             'app_server': {
                 'internal_ip': args.appserver_internalip
             },
             'master': hosts_vars['master'],
         }
-        
-        barman_config_dir = _working_root + '/config/barman'
-        if not os.path.exists(barman_config_dir):
-            os.makedirs(barman_config_dir)
-        _apply_template(_template_root + '/config/barman/barman.conf', {}, _working_root + '/config/barman/barman.conf')
-        _apply_template(_template_root + '/config/barman/replica.conf', vars, _working_root + '/config/barman/' + replica['hostname'] + '.conf')
 
         host_config_dir = _working_root + '/config/' + replica['hostname']
         if not os.path.exists(host_config_dir):
@@ -162,11 +150,6 @@ def reinit_standby_handler(args):
 
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
-        'barman': {
-            'hostname': 'barman',
-            'external_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip(),
-            'internal_ip': subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip(),
-        },
         'standby': [
         ],
         'replicas': [
@@ -220,23 +203,8 @@ def fork_database_handler(args):
         staging_external = args.staging_external_ip
         staging_internal = args.staging_internal_ip
 
-    # Get the external_ip and internal_ip if the barman server is created through terraform
-    if args.barman_not_terraformed == False:
-        barman_external = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_external_ip')).rstrip()
-        barman_internal = subprocess.check_output(_as_array(_working_root + '/bin/terraform output --state=' + _working_root + '/terraform.tfstate barman_internal_ip')).rstrip()
-    # Get the external_ip and the internal_ip if the barman server is set up manually
-    else:
-        barman_external = args.barman_external_ip
-        barman_internal = args.barman_internal_ip
-
-
     # Generate the hosts file from the output of the terraform step.
     hosts_vars = {
-        'barman': {
-            'hostname': 'barman',
-            'external_ip': barman_external,
-            'internal_ip': barman_internal,
-        },
         'standby': [
         ],
         'replicas': [
@@ -270,14 +238,11 @@ def fork_database_handler(args):
             hosts_vars['master'] = vars
         else:
             hosts_vars['standby'].append(vars)
+
     _apply_template(_template_root + '/hosts', hosts_vars, _working_root + '/hosts')
 
     # Generate configuration files needed for configuring the instances.
     vars = {
-        'barman': {
-            'hostname': 'barman',
-            'internal_ip': barman_internal,
-        },
         'master': {
             'hostname': args.master_hostname,
         },
@@ -315,7 +280,6 @@ terraform_instances_parser.add_argument('--disk_type', required=True, choices=['
 terraform_instances_parser.add_argument('--disk_size', required=True, help='The size of the disk.')
 terraform_instances_parser.add_argument('--machine_type', default='f1-micro', help='The machine type.')
 terraform_instances_parser.add_argument('--master_hostname', default='replica1', help='Host name for the master.')
-terraform_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 terraform_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 terraform_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 terraform_instances_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
@@ -325,7 +289,6 @@ terraform_instances_parser.add_argument('--staging_hostname', default='staging',
 configure_instances_parser = subparsers.add_parser('configure-instances', help='Configure instances. Assumes instances have already been created, and a tfstate file exists.')
 configure_instances_parser.set_defaults(handler=configure_instances_handler)
 configure_instances_parser.add_argument('--master_hostname', default='replica1', help='Host name for the master.')
-configure_instances_parser.add_argument('--standby_hostname_prefix', default='standby', help='Hostname prefix for the standby instances.')
 configure_instances_parser.add_argument('--num_standby', default=2, type=int, help='Number of standby instances.')
 configure_instances_parser.add_argument('--replica_hostname_prefix', default='replica', help='Hostname prefix for the instances.')
 configure_instances_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
@@ -336,9 +299,6 @@ restore_database_parser.set_defaults(handler=restore_database_handler)
 restore_database_parser.add_argument('--master_hostname', required=True, help='Hostname of the current master.')
 restore_database_parser.add_argument('--database_name', required=True, help='Name of the database to be created.')
 restore_database_parser.add_argument('--database_user', required=True, help='Name of the user to be created to access postgres.')
-restore_database_parser.add_argument('--barman_source_server', help='The host from which to restore, as registered on Barman.')
-restore_database_parser.add_argument('--barman_backup_id', help='The backup id for the specified host. If you want to use the lastest backup, use \lastest\'')
-restore_database_parser.add_argument('--barman_target_time', help='The point in time to recover. Make sure this is between the begin_time and end_time of the back up specified.')
 restore_database_parser.add_argument('--sqldump_location', help='Location of sqldump on Google Cloud Storage for initializing the database, in the form [storage-bucket]:[path/to/sql/file].')
 
 status_parser = subparsers.add_parser('status', help='Show the current status of the setup.')
@@ -358,10 +318,7 @@ fork_database_parser.add_argument('--master_hostname', required=True, help='Host
 fork_database_parser.add_argument('--num_replicas', required=True, type=int, help='Number of replicas.')
 fork_database_parser.add_argument('--staging_hostname', required=True, help='Hostname of the staging server.')
 fork_database_parser.add_argument('--staging_not_terraformed', default=False, action='store_true', help='Whether or not the staging instance is set up by terraform.')
-fork_database_parser.add_argument('--barman_not_terraformed', default=False, action='store_true', help='Whether or not the barman instance is set up by terraform.')
 fork_database_parser.add_argument('--replicas_not_terraformed', default=False, action='store_true', help='Whether or not the replicas instances are set up by terraform.')
-fork_database_parser.add_argument('--barman_external_ip', help='External ip address of the barman server if not set up by terraform.')
-fork_database_parser.add_argument('--barman_internal_ip', help='Internal ip address of the barman server if not set up by terraform.')
 fork_database_parser.add_argument('--replicas_external_ip', help='External ip address of the replicas servers if not set up by terraform.')
 fork_database_parser.add_argument('--replicas_internal_ip', help='Internal ip address of the replicas servers if not set up by terraform.')
 fork_database_parser.add_argument('--staging_external_ip', help='External ip address of the staging server if not set up by terraform.')

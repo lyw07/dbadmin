@@ -1,6 +1,15 @@
 ---
-# Base configuration. Install dependencies and configure hosts. 
-- hosts: db-cluster
+# Copy the google application credentials from gateway to all the replicas
+- hosts: gateway
+  connection: local
+  tasks:
+  <[ #replicas ]>
+    - name: create a service account credentials file
+      command: gcloud beta compute scp {{ lookup('env', 'HOME') }}/.gcloud/google_application_credentials.json <[ hostname ]>:{{ lookup('env', 'HOME') }} --zone us-central1-f
+  <[ /replicas ]>
+
+# Configuring all replicas. Install dependencies and configure hosts. 
+- hosts: replicas
   tasks:
     - name: add gcsfuse to apt sources list
       apt_repository:
@@ -36,11 +45,15 @@
         - postgresql-9.6
         - postgresql-server-dev-9.6
         - repmgr 
-        - python-pip 
-        - python-dev 
+        - python3-pip
+        - python-pip
+        - python3-dev
+        - python-dev
         - build-essential 
         - libssl-dev 
         - libffi-dev
+        - lzop
+        - pv
     
     - name: install python modules
       pip:
@@ -48,6 +61,17 @@
       with_items:
         - pexpect
         - psycopg2
+
+    - name: upgrade pip3 to get latest version
+      pip:
+        name: pip
+        state: latest
+        executable: pip3
+
+    - name: install wal-e
+      pip:
+        name: wal-e[google]
+        executable: pip3
 
     - name: add new hostname in /etc/hosts
       lineinfile:
@@ -67,62 +91,6 @@
         dest: /etc/hosts
         line: "{{ ip.stdout }}"
 
-# Install and configure barman
-- hosts: barman
-  tasks:
-    - name: install barman
-      apt:
-        name: barman
-
-    - name: copy barman server configuration into /etc/barman.d
-      template: 
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/barman.conf"
-        dest: /etc/barman.conf
-  <[ #replicas ]>
-    - name: copy database server <[ hostname ]>'s configuration into /etc/barman.d
-      copy:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/barman/<[ hostname ]>.conf"
-        dest: /etc/barman.d/<[ hostname ]>.conf
-  <[ /replicas ]>
-
-    - name: generate ssh keys
-      expect: 
-        command: ssh-keygen -t rsa
-        responses:
-          'Enter file in which to save the key \(/var/lib/barman/.ssh/id_rsa\):': "\n"
-          'Enter passphrase \(empty for no passphrase\):': "\n"
-          'Enter same passphrase again:': "\n"
-        creates: /var/lib/barman/.ssh/id_rsa
-      become: true
-      become_method: sudo
-      become_user: barman
-
-    - name: fetch the public key of barman to store in the local box
-      fetch:
-        src: /var/lib/barman/.ssh/id_rsa.pub
-        dest: /tmp
-
-    - name: create config for ssh
-      file: 
-        path: /var/lib/barman/.ssh/config
-        state: touch
-      become: true
-      become_method: sudo
-      become_user: barman
-
-  <[ #replicas ]>
-    - name: create incoming wal directory for <[ hostname ]> server
-      file:
-        path: /var/lib/barman/<[ hostname ]>/incoming
-        state: directory
-        owner: barman
-        group: barman
-        mode: 0755
-  <[ /replicas ]>
-
-# Configuring all replicas - ssh-keys, and postgres configuration.
-- hosts: replicas
-  tasks:
     - block: 
       - name: generate ssh keys
         expect: 
@@ -132,30 +100,10 @@
             'Enter passphrase \(empty for no passphrase\):': "\n"
             'Enter same passphrase again:': "\n"
           creates: /var/lib/postgresql/.ssh/id_rsa
-      - name: create config for ssh
-        file: 
-          path: /var/lib/postgresql/.ssh/config
-          state: touch
-      - name: add barman server's ip address to config
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: "Host barman"
-      - name: add user barman to config
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: 'User barman'
-      - name: ignore ssh host key checking
-        lineinfile:
-          dest: /var/lib/postgresql/.ssh/config
-          line: 'StrictHostKeyChecking no'
       - name: fetch the public key to store in the local box
         fetch:
           src: /var/lib/postgresql/.ssh/id_rsa.pub
           dest: /tmp
-      - name: copy barman public key into authorized_keys
-        copy:
-          src: /tmp/barman/var/lib/barman/.ssh/id_rsa.pub
-          dest: /var/lib/postgresql/.ssh/authorized_keys
       become: true
       become_method: sudo
       become_user: postgres
@@ -195,12 +143,25 @@
         owner: postgres
         group: postgres
         mode: 0740
-    
-    - name: install barman-cli used by the utility scripts
-      apt:
-        name: barman-cli
-      become: yes
-      become_method: sudo
+
+    - name: create /etc/wal-e.d/env folder
+      file:
+        path: /etc/wal-e.d/env/
+        state: directory
+
+    - name: copy the google application credentials to /etc/wal-e.d/env/
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/google_application_credentials.json"
+        dest: /etc/wal-e.d/env/google_application_credentials.json
+        remote_src: true
+        group: postgres
+
+    - name: change directory ownership, group and mode
+      file:
+        path: /etc/wal-e.d/
+        owner: root
+        group: postgres
+        mode: 0750
     
     - name: restart server
       service:
@@ -238,65 +199,19 @@
       become_method: sudo
       when: '"master" not in host_replica_type.stdout'
 
-# Back to barman - configure/copy barman ssh-keys, force backup master.
-- hosts: barman
-  become: true
-  become_method: sudo
-  become_user: barman
-  tasks:
-    - name: create config for ssh
-      file: 
-        path: /var/lib/barman/.ssh/authorized_keys
-        state: touch
-  <[ #replicas ]>
-    - name: add <[ hostname ]>'s public key into authorized_keys
-      lineinfile:
-        dest: /var/lib/barman/.ssh/authorized_keys
-        line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
-
-    - name: add <[ hostname ]>'s ip address to config
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: "Host <[ hostname ]>"
-  <[ /replicas ]>
-
-    - name: ignore ssh host key checking
-      lineinfile:
-        dest: /var/lib/barman/.ssh/config
-        line: 'StrictHostKeyChecking no'
-
-    - name: create replication slot
-      command: barman receive-wal --create-slot <[ master.hostname ]>
-      ignore_errors: true
-
-    - name: run barman cron
-      command: barman cron
-
-    - name: create a crontab to run barman cron every minute
-      cron:
-        name: "barman cron in every minute"
-        minute: "*"
-        hour: "*"
-        day: "*"
-        month: "*"
-        weekday: "*"
-        job: "/usr/bin/barman cron"
-
-    - name: switch-xlog
-      command: barman switch-xlog --force --archive <[ master.hostname ]>
-
-    - name: backup master server's data
-      command: barman backup <[ master.hostname ]>
-
-- hosts: master
-  tasks:
-    - name: start repmgrd
-      shell: >
-        repmgrd -f /etc/repmgr.conf -d --verbose >> 
-        /var/log/postgresql/postgresql-9.6-main.log 2>&1
+    - block:
+      - name: push a base backup to Google Cloud Storage
+        shell: >
+          /usr/local/bin/wal-e backup-push /var/lib/postgresql/9.6/main/ >> 
+          --gs-access-key-id /etc/wal-e.d/env/google_application_credentials.json --gs-prefix gs://teststudiobackup/
+      - name: start repmgrd
+        shell: >
+          repmgrd -f /etc/repmgr.conf -d --verbose >> 
+          /var/log/postgresql/postgresql-9.6-main.log 2>&1
       become: true
       become_user: postgres
       become_method: sudo
+
 
 # Configure standby as standby instances on repmgr. 
 - hosts: standby
@@ -310,6 +225,16 @@
       file:
         path: /var/lib/postgresql/9.6/main
         state: absent
+
+    - name: copy recovery.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/recovery.conf"
+        dest: /etc/postgresql/9.6/main/recovery.conf
+
+    - name: Pull a base backup from Google Cloud Storage
+      command: >
+        WALE_GS_PREFIX=\"gs://teststudiobackup\" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json >>
+        wal-e backup-fetch /var/lib/postgresql/9.6/main/ LATEST
 
     - name: clone standby
       command: >
@@ -350,15 +275,3 @@
       become: true
       become_user: postgres
       become_method: sudo
-
-# Prepare barman to receive wals from standbys.
-- hosts: barman
-  tasks:
-  <[ #standby ]>
-    - name: create replication slot for <[ hostname ]>
-      command: barman receive-wal --create-slot <[ hostname ]>
-      become: true
-      become_method: sudo
-      become_user: barman
-      ignore_errors: true
-  <[ /standby ]>

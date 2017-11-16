@@ -201,9 +201,10 @@
 
     - block:
       - name: push a base backup to Google Cloud Storage
-        shell: >
-          /usr/local/bin/wal-e backup-push /var/lib/postgresql/9.6/main/ >> 
-          --gs-access-key-id /etc/wal-e.d/env/google_application_credentials.json --gs-prefix gs://teststudiobackup/
+        command: >
+          WALE_GS_PREFIX="gs://teststudiobackup/" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json
+          wal-e backup-push /var/lib/postgresql/9.6/main/
+
       - name: start repmgrd
         shell: >
           repmgrd -f /etc/repmgr.conf -d --verbose >> 

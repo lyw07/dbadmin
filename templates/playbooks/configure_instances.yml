@@ -135,6 +135,11 @@
       copy:
         src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/repmgr.conf"
         dest: /etc/repmgr.conf
+
+    - name: copy recovery.conf file
+      copy:
+        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/recovery.conf"
+        dest: /etc/postgresql/9.6/main/recovery.conf
     
     - name: copy utility scripts expected by repmgr.conf
       copy:
@@ -201,7 +206,7 @@
 
     - block:
       - name: push a base backup to Google Cloud Storage
-        command: >
+        shell: >
           WALE_GS_PREFIX="gs://teststudiobackup/" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json
           wal-e backup-push /var/lib/postgresql/9.6/main/
 
@@ -227,14 +232,9 @@
         path: /var/lib/postgresql/9.6/main
         state: absent
 
-    - name: copy recovery.conf file
-      copy:
-        src: "{{ lookup('env', 'HOME') }}/.dbadmin/config/{{ ansible_hostname }}/recovery.conf"
-        dest: /etc/postgresql/9.6/main/recovery.conf
-
     - name: Pull a base backup from Google Cloud Storage
-      command: >
-        WALE_GS_PREFIX=\"gs://teststudiobackup\" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json >>
+      shell: >
+        WALE_GS_PREFIX="gs://teststudiobackup" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json
         wal-e backup-fetch /var/lib/postgresql/9.6/main/ LATEST
 
     - name: clone standby

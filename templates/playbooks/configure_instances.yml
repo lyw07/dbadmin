@@ -44,7 +44,7 @@
         - unzip
         - postgresql-9.6
         - postgresql-server-dev-9.6
-        - repmgr 
+        - postgresql-9.6-repmgr
         - python3-pip
         - python-pip
         - python3-dev

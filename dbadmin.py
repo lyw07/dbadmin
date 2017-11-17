@@ -109,7 +109,6 @@ def configure_instances_handler(args):
         _apply_template(_template_root + '/config/replica/pg_hba.conf', vars, host_config_dir + '/pg_hba.conf')
         _apply_template(_template_root + '/config/replica/postgresql.conf', vars, host_config_dir + '/postgresql.conf')
         _apply_template(_template_root + '/config/replica/repmgr.conf', vars, host_config_dir + '/repmgr.conf')
-        _apply_template(_template_root + '/config/replica/recovery.conf', vars, host_config_dir + '/recovery.conf')
 
         host_script_dir = _working_root + '/scripts/' + replica['hostname']
         if not os.path.exists(host_script_dir):

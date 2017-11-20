@@ -262,24 +262,14 @@
         command: repmgr -f /etc/repmgr.conf standby register
         when:  '"standby" not in host_replica_type.stdout'
 
-      - name: print statement
-        shell: tail /var/log/postgresql/postgresql-9.6-main.log
-        register: first_log
-
-      - debug:
-          var: first_log
+      - name: pause to let wal streaming start
+        pause:
+          seconds: 30
 
       - name: start repmgrd
         shell: >
           repmgrd -f /etc/repmgr.conf -d --verbose >> 
           /var/log/postgresql/postgresql-9.6-main.log 2>&1
-
-      - name: print statement again
-        shell: tail /var/log/postgresql/postgresql-9.6-main.log
-        register: second_log
-
-      - debug:
-          var: second_log
       become: true
       become_user: postgres
       become_method: sudo

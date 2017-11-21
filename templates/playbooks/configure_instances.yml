@@ -264,7 +264,7 @@
 
       - name: pause to let wal streaming start
         pause:
-          seconds: 30
+          seconds: 20
 
       - name: start repmgrd
         shell: >

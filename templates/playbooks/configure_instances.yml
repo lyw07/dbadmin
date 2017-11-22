@@ -232,7 +232,7 @@
 
     - name: clone standby
       command: >
-        repmgr -h <[ master.hostname ]> -d repmgr
+        repmgr -h <[ master.hostname ]> -d repmgr --ignore-external-config-files
         -D /var/lib/postgresql/9.6/main -f /etc/repmgr.conf standby clone
       become: true
       become_user: postgres

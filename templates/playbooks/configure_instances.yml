@@ -190,17 +190,17 @@
         owner: repmgr
 
     - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_replicas.repl_nodes where name = '{{ ansible_hostname }}') to stdout with csv;"
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
       register: host_replica_type
       ignore_errors: True
       tags: debug
     
-    - name: register as master
-      command: repmgr -f /etc/repmgr.conf master register
+    - name: register as primary
+      command: repmgr -f /etc/repmgr.conf primary register
       become: true
       become_user: postgres
       become_method: sudo
-      when: '"master" not in host_replica_type.stdout'
+      when: '"primary" not in host_replica_type.stdout'
 
     - block:
       - name: push a base backup to Google Cloud Storage
@@ -269,7 +269,7 @@
         state: reloaded
     
     - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr_replicas.repl_nodes where name = '{{ ansible_hostname }}') to stdout with csv;"
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
       register: host_replica_type
       ignore_errors: true
       tags: debug

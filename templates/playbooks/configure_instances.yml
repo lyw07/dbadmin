@@ -191,6 +191,17 @@
 # Registering the master on repmgr.
 - hosts: master
   tasks:
+    - name: enable archive mode for master server
+      file:
+        path: /etc/postgresql/9.6/main/postgresql.conf
+        regexp: '^archive_mode'
+        line: 'archive_mode = on'
+
+    - name: restart server
+      service:
+        name: postgresql
+        state: restarted
+
     - name: create authorized_keys for ssh
       file:
         path: /var/lib/postgresql/.ssh/authorized_keys

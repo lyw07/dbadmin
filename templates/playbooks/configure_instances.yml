@@ -179,6 +179,34 @@
 # Registering the master on repmgr.
 - hosts: master
   tasks:
+    - name: create authorized_keys for ssh
+      file:
+        path: /var/lib/postgresql/.ssh/authorized_keys
+        state: touch
+
+    - name: create config for ssh
+      file:
+        path: /var/lib/postgresql/.ssh/config
+        state: touch
+  <[ #replicas ]>
+    - name: add <[ hostname ]>'s public key into authorized_keys
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/authorized_keys
+        line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+      when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
+
+    - name: add <[ hostname ]>'s ip address to config
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/config
+        line: "Host <[ hostname ]>"
+      when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
+  <[ /replicas ]>
+
+    - name: ignore ssh host key checking
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/config
+        line: 'StrictHostKeyChecking no'
+
     - name: create user repmgr
       postgresql_user:
         name: repmgr
@@ -223,6 +251,11 @@
     - name: create authorized_keys for ssh
       file:
         path: /var/lib/postgresql/.ssh/authorized_keys
+        state: touch
+
+    - name: create config for ssh
+      file:
+        path: /var/lib/postgresql/.ssh/config
         state: touch
 
     - name: add <[ master.hostname ]>'s public key into authorized_keys

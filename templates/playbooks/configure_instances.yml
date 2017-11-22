@@ -191,17 +191,15 @@
 # Registering the master on repmgr.
 - hosts: master
   tasks:
-    - name: enable archive mode for master server
-      lineinfile:
-        path: /etc/postgresql/9.6/main/postgresql.conf
-        regexp: '^archive_mode'
-        line: 'archive_mode = on'
-
-    - name: restart server
-      service:
-        name: postgresql
-        state: restarted
-
+    # - name: enable archive mode for master server
+    #   lineinfile:
+    #     path: /etc/postgresql/9.6/main/postgresql.conf
+    #     regexp: '^archive_mode'
+    #     line: 'archive_mode = on'
+    # - name: restart server
+    #   service:
+    #     name: postgresql
+    #     state: restarted
     - name: create authorized_keys for ssh
       file:
         path: /var/lib/postgresql/.ssh/authorized_keys
@@ -285,8 +283,8 @@
         state: started
 
     - name: pause the server in case that server is in the recovery mode and database has not been up yet
-        pause:
-          seconds: 60
+      pause:
+        seconds: 60
 
     - block:
       - name: find if host is already registered with repmgr

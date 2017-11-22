@@ -192,7 +192,7 @@
 - hosts: master
   tasks:
     - name: enable archive mode for master server
-      file:
+      lineinfile:
         path: /etc/postgresql/9.6/main/postgresql.conf
         regexp: '^archive_mode'
         line: 'archive_mode = on'
@@ -284,31 +284,16 @@
         name: postgresql
         state: started
 
-    - name: reload configuration files
-      service:
-        name: postgresql
-        state: reloaded
-    
-    - name: find if host is already registered with repmgr
-      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
-      register: host_replica_type
-      ignore_errors: true
-      tags: debug
-      become: true
-      become_user: postgres
-      become_method: sudo
-
-    - block:
-      - name: check if database is running
-        command: psql -U repmgr -d repmgr -c "\dt"
-        register: db_running_check_first
-        ignore_errors: true
-        tags: debug
-
-      - name: pause the server if server is in the recovery mode and database has not been up yet
+    - name: pause the server in case that server is in the recovery mode and database has not been up yet
         pause:
           seconds: 60
-        when: '"the database system is starting up" in db_running_check_first.stdout'
+
+    - block:
+      - name: find if host is already registered with repmgr
+        command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
+        register: host_replica_type
+        ignore_errors: true
+        tags: debug
 
       - name: register as standby
         command: repmgr -f /etc/repmgr.conf standby register

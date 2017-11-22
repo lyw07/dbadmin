@@ -311,9 +311,14 @@
       become_method: sudo
 
     - block:
+      - name: pause to let the replica fully starts
+        pause:
+          seconds: 20
+        when: '"the database system is starting up" in host_replica_type.stdout'
+
       - name: register as standby
         command: repmgr -f /etc/repmgr.conf standby register
-        when:  '"standby" not in host_replica_type.stdout'
+        when: '"standby" not in host_replica_type.stdout'
 
       - name: pause to let wal streaming start
         pause:

@@ -191,15 +191,6 @@
 # Registering the master on repmgr.
 - hosts: master
   tasks:
-    # - name: enable archive mode for master server
-    #   lineinfile:
-    #     path: /etc/postgresql/9.6/main/postgresql.conf
-    #     regexp: '^archive_mode'
-    #     line: 'archive_mode = on'
-    # - name: restart server
-    #   service:
-    #     name: postgresql
-    #     state: restarted
     - name: create authorized_keys for ssh
       file:
         path: /var/lib/postgresql/.ssh/authorized_keys
@@ -304,3 +295,8 @@
       become: true
       become_user: postgres
       become_method: sudo
+
+    - name: add trigger_file in recovery.conf
+      lineinfile:
+        dest: /var/lib/postgresql/9.6/main/recovery.conf
+        line: 'trigger_file = "/etc/wal-e.d/env/postgresql.trigger"'

@@ -176,6 +176,18 @@
         name: postgresql
         state: reloaded
 
+- hosts: standby
+  tasks:
+    - name: stop standby server
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: remove postgresql data folder to prepare for standby clone
+      file:
+        path: /var/lib/postgresql/9.6/main
+        state: absent
+
 # Registering the master on repmgr.
 - hosts: master
   tasks:
@@ -248,41 +260,6 @@
 # Configure standby as standby instances on repmgr. 
 - hosts: standby
   tasks:
-    - name: create authorized_keys for ssh
-      file:
-        path: /var/lib/postgresql/.ssh/authorized_keys
-        state: touch
-
-    - name: create config for ssh
-      file:
-        path: /var/lib/postgresql/.ssh/config
-        state: touch
-
-    - name: add <[ master.hostname ]>'s public key into authorized_keys
-      lineinfile:
-        dest: /var/lib/postgresql/.ssh/authorized_keys
-        line: "{{ lookup('file', '/tmp/<[ master.hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
-
-    - name: add <[ master.hostname ]>'s ip address to config
-      lineinfile:
-        dest: /var/lib/postgresql/.ssh/config
-        line: "Host <[ master.hostname ]>"
-
-    - name: ignore ssh host key checking
-      lineinfile:
-        dest: /var/lib/postgresql/.ssh/config
-        line: 'StrictHostKeyChecking no'
-
-    - name: stop standby server
-      service:
-        name: postgresql
-        state: stopped
-
-    - name: remove postgresql data folder to prepare for standby clone
-      file:
-        path: /var/lib/postgresql/9.6/main
-        state: absent
-
     - name: clone standby
       command: >
         repmgr -h <[ master.hostname ]> -d repmgr
@@ -311,18 +288,20 @@
       become_method: sudo
 
     - block:
-      - name: pause to let the replica fully starts
+      - name: check if database is running
+        command: psql -U repmgr -d repmgr -c "\dt"
+        register: db_running_check_first
+        ignore_errors: true
+        tags: debug
+
+      - name: pause the server if server is in the recovery mode and database has not been up yet
         pause:
-          seconds: 20
-        when: '"the database system is starting up" in host_replica_type.stdout'
+          seconds: 60
+        when: '"the database system is starting up" in db_running_check_first.stdout'
 
       - name: register as standby
         command: repmgr -f /etc/repmgr.conf standby register
         when: '"standby" not in host_replica_type.stdout'
-
-      - name: pause to let wal streaming start
-        pause:
-          seconds: 20
 
       - name: start repmgrd
         shell: >

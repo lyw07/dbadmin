@@ -299,4 +299,4 @@
     - name: add trigger_file in recovery.conf
       lineinfile:
         dest: /var/lib/postgresql/9.6/main/recovery.conf
-        line: 'trigger_file = "/etc/wal-e.d/env/postgresql.trigger"'
+        line: 'trigger_file = "/var/lib/postgresql/postgresql.trigger"'

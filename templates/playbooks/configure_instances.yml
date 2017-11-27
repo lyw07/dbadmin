@@ -268,35 +268,35 @@
       become_user: postgres
       become_method: sudo
 
-    # - name: start server
-    #   service:
-    #     name: postgresql
-    #     state: started
+    - name: start server
+      service:
+        name: postgresql
+        state: started
 
-    # - name: pause the server in case that server is in the recovery mode and database has not been up yet
-    #   pause:
-    #     seconds: 60
+    - name: pause the server in case that server is in the recovery mode and database has not been up yet
+      pause:
+        seconds: 60
 
-    # - block:
-    #   - name: find if host is already registered with repmgr
-    #     command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
-    #     register: host_replica_type
-    #     ignore_errors: true
-    #     tags: debug
+    - block:
+      - name: find if host is already registered with repmgr
+        command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
+        register: host_replica_type
+        ignore_errors: true
+        tags: debug
 
-    #   - name: register as standby
-    #     command: repmgr -f /etc/repmgr.conf standby register
-    #     when: '"standby" not in host_replica_type.stdout'
+      - name: register as standby
+        command: repmgr -f /etc/repmgr.conf standby register
+        when: '"standby" not in host_replica_type.stdout'
 
-    #   - name: start repmgrd
-    #     shell: >
-    #       repmgrd -f /etc/repmgr.conf -d --verbose >> 
-    #       /var/log/postgresql/postgresql-9.6-main.log 2>&1
-    #   become: true
-    #   become_user: postgres
+      - name: start repmgrd
+        shell: >
+          repmgrd -f /etc/repmgr.conf -d --verbose >> 
+          /var/log/postgresql/postgresql-9.6-main.log 2>&1
+      become: true
+      become_user: postgres
     #   become_method: sudo
 
     - name: add trigger_file in recovery.conf
       lineinfile:
         dest: /var/lib/postgresql/9.6/main/recovery.conf
-        line: 'trigger_file = "/var/lib/postgresql/postgresql.trigger"'
+        line: trigger_file = '/var/lib/postgresql/postgresql.trigger'

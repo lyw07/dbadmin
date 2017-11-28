@@ -191,56 +191,56 @@
 # Registering the master on repmgr.
 - hosts: master
   tasks:
-  #   - name: create authorized_keys for ssh
-  #     file:
-  #       path: /var/lib/postgresql/.ssh/authorized_keys
-  #       state: touch
+    - name: create authorized_keys for ssh
+      file:
+        path: /var/lib/postgresql/.ssh/authorized_keys
+        state: touch
 
-  #   - name: create config for ssh
-  #     file:
-  #       path: /var/lib/postgresql/.ssh/config
-  #       state: touch
-  # <[ #replicas ]>
-  #   - name: add <[ hostname ]>'s public key into authorized_keys
-  #     lineinfile:
-  #       dest: /var/lib/postgresql/.ssh/authorized_keys
-  #       line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
-  #     when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
+    - name: create config for ssh
+      file:
+        path: /var/lib/postgresql/.ssh/config
+        state: touch
+  <[ #replicas ]>
+    - name: add <[ hostname ]>'s public key into authorized_keys
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/authorized_keys
+        line: "{{ lookup('file', '/tmp/<[ hostname ]>/var/lib/postgresql/.ssh/id_rsa.pub') }}"
+      when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
 
-  #   - name: add <[ hostname ]>'s ip address to config
-  #     lineinfile:
-  #       dest: /var/lib/postgresql/.ssh/config
-  #       line: "Host <[ hostname ]>"
-  #     when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
-  # <[ /replicas ]>
+    - name: add <[ hostname ]>'s ip address to config
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/config
+        line: "Host <[ hostname ]>"
+      when: '"<[ hostname ]>" != "<[ master.hostname ]>"'
+  <[ /replicas ]>
 
-  #   - name: ignore ssh host key checking
-  #     lineinfile:
-  #       dest: /var/lib/postgresql/.ssh/config
-  #       line: 'StrictHostKeyChecking no'
+    - name: ignore ssh host key checking
+      lineinfile:
+        dest: /var/lib/postgresql/.ssh/config
+        line: 'StrictHostKeyChecking no'
 
-    # - name: create user repmgr
-    #   postgresql_user:
-    #     name: repmgr
-    #     role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
+    - name: create user repmgr
+      postgresql_user:
+        name: repmgr
+        role_attr_flags: SUPERUSER,CREATEROLE,CREATEDB
 
-    # - name: create database repmgr
-    #   postgresql_db:
-    #     name: repmgr
-    #     owner: repmgr
+    - name: create database repmgr
+      postgresql_db:
+        name: repmgr
+        owner: repmgr
 
-    # - name: find if host is already registered with repmgr
-    #   command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
-    #   register: host_replica_type
-    #   ignore_errors: True
-    #   tags: debug
+    - name: find if host is already registered with repmgr
+      command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
+      register: host_replica_type
+      ignore_errors: True
+      tags: debug
     
-    # - name: register as primary
-    #   command: repmgr -f /etc/repmgr.conf primary register
-    #   become: true
-    #   become_user: postgres
-    #   become_method: sudo
-    #   when: '"primary" not in host_replica_type.stdout'
+    - name: register as primary
+      command: repmgr -f /etc/repmgr.conf primary register
+      become: true
+      become_user: postgres
+      become_method: sudo
+      when: '"primary" not in host_replica_type.stdout'
 
     - block:
       - name: push a base backup to Google Cloud Storage
@@ -248,10 +248,10 @@
           WALE_GS_PREFIX="gs://teststudiobackup/" GOOGLE_APPLICATION_CREDENTIALS=/etc/wal-e.d/env/google_application_credentials.json
           wal-e backup-push /var/lib/postgresql/9.6/main/
 
-      # - name: start repmgrd
-      #   shell: >
-      #     repmgrd -f /etc/repmgr.conf -d --verbose >> 
-      #     /var/log/postgresql/postgresql-9.6-main.log 2>&1
+      - name: start repmgrd
+        shell: >
+          repmgrd -f /etc/repmgr.conf -d --verbose >> 
+          /var/log/postgresql/postgresql-9.6-main.log 2>&1
       become: true
       become_user: postgres
       become_method: sudo
@@ -277,35 +277,34 @@
           dest: /var/lib/postgresql/9.6/main/recovery.conf
           owner: postgres
           group: postgres
-          mode: 600
       become: true
       become_user: postgres
       become_method: sudo
 
-    # - name: start server
-    #   service:
-    #     name: postgresql
-    #     state: started
+    - name: start server
+      service:
+        name: postgresql
+        state: started
 
-    # - name: pause the server in case that server is in the recovery mode and database has not been up yet
-    #   pause:
-    #     seconds: 60
+    - name: pause the server in case that server is in the recovery mode and database has not been up yet
+      pause:
+        seconds: 60
 
-    # - block:
-    #   - name: find if host is already registered with repmgr
-    #     command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
-    #     register: host_replica_type
-    #     ignore_errors: true
-    #     tags: debug
+    - block:
+      - name: find if host is already registered with repmgr
+        command: psql -U repmgr -d repmgr -c "copy(select type from repmgr.nodes where node_name = '{{ ansible_hostname }}') to stdout with csv;"
+        register: host_replica_type
+        ignore_errors: true
+        tags: debug
 
-    #   - name: register as standby
-    #     command: repmgr -f /etc/repmgr.conf standby register
-    #     when: '"standby" not in host_replica_type.stdout'
+      - name: register as standby
+        command: repmgr -f /etc/repmgr.conf standby register
+        when: '"standby" not in host_replica_type.stdout'
 
-    #   - name: start repmgrd
-    #     shell: >
-    #       repmgrd -f /etc/repmgr.conf -d --verbose >> 
-    #       /var/log/postgresql/postgresql-9.6-main.log 2>&1
-    #   become: true
-    #   become_user: postgres
-    # #   become_method: sudo
+      - name: start repmgrd
+        shell: >
+          repmgrd -f /etc/repmgr.conf -d --verbose >> 
+          /var/log/postgresql/postgresql-9.6-main.log 2>&1
+      become: true
+      become_user: postgres
+    #   become_method: sudo
